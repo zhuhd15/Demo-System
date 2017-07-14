@@ -2,6 +2,23 @@ import caffe,cv2
 import numpy,math
 from skimage import measure
 
+
+def faceSimilarityCompare(caffemodel1,caffemodel2,image1,image2,minsize):
+    '''
+    This function is the one that need to be used by other files
+    :param caffemodel1: detection
+    :param caffemodel2: recognition
+    :param image1: face img1
+    :param image2: face img2
+    :param minsize: size of face
+    :return: similarity
+    '''
+    [bbox1, Ip1] = FaceDetect(image1, minsize, caffemodel1)
+    [bbox2, Ip2] = FaceDetect(image2, minsize, caffemodel1)
+    #similarity = face_Extract(caffemodel2, bbox1, bbox2, Ip1, Ip2)
+    similarity = face_Extract2(caffemodel2, bbox1, bbox2, Ip1, Ip2)
+    return similarity
+
 def FaceDetect(im,min_size,net):
     M_BGR=[104.,117.,123.]
     heigth,width,depth=im.shape
@@ -129,6 +146,68 @@ def feature_Extract(caffemodel,bbox,image,W,H):
     feature = caffemodel.forward()
     return feature['fc5'][0]
 
+def feature_Extract2(caffemodel,bbox,image,W,H):
+    S = max(bbox[2], bbox[3]) * 1.4
+    bbox[0] = bbox[0] + (bbox[2] - S) / 2
+    bbox[1] = bbox[1] + (bbox[3] - S) / 2
+    bbox[3] = bbox[2] = S
+    a = int(bbox[0])
+    b = int(bbox[1])
+    c = int(bbox[2])
+    d = int(bbox[3])
+    im_data = cv2.resize(cv2.cvtColor(image[b:(b + d), a: (a + c)], cv2.COLOR_BGR2GRAY), (W, H),
+                          interpolation=cv2.INTER_CUBIC)
+#    cv2.imshow('tst',im_data)
+#    cv2.waitKey(0)
+    im_data = numpy.array(im_data, dtype=numpy.single) / 255
+    transformer = caffe.io.Transformer({'data': net.blobs['I'].data.shape})
+    caffemodel.blobs['I'].data[...] = transformer.preprocess('data', im_data)
+    feature = caffemodel.forward()
+    return feature['fc5'][0]
+
+def face_Extract2(caffemodel,bbox1,bbox2,image1,image2):
+    H=128
+    W=128
+    S = max(bbox1[2], bbox1[3]) * 1.3
+    bbox1[0] = bbox1[0] + (bbox1[2] - S) / 2
+    bbox1[1] = bbox1[1] + (bbox1[3] - S) / 2
+    bbox1[3] = bbox1[2] = S
+    a = int(bbox1[0])
+    b = int(bbox1[1])
+    c = int(bbox1[2])
+    d = int(bbox1[3])
+    im_data1 = cv2.resize(cv2.cvtColor(image1[b:(b + d), a: (a + c)], cv2.COLOR_BGR2GRAY), (W, H),
+                          interpolation=cv2.INTER_CUBIC)
+    S = max(bbox2[2], bbox2[3]) * 1.3
+    bbox2[0] = bbox2[0] + (bbox2[2] - S) / 2
+    bbox2[1] = bbox2[1] + (bbox2[3] - S) / 2
+    bbox2[3] = bbox2[2] = S
+    a = int(bbox2[0])
+    b = int(bbox2[1])
+    c = int(bbox2[2])
+    d = int(bbox2[3])
+    im_data2 = cv2.resize(cv2.cvtColor(image2[b:(b + d), a: (a + c)], cv2.COLOR_BGR2GRAY), (W, H),
+                          interpolation=cv2.INTER_CUBIC)
+
+    im_data1 = numpy.array(im_data1, dtype=numpy.single) / 255
+    im_data2 = numpy.array(im_data2, dtype=numpy.single) / 255
+    im_data = [im_data1,im_data2]
+    transformer = caffe.io.Transformer({'data': net.blobs['I'].data.shape})
+    caffemodel.blobs['I'].data[0][...] = transformer.preprocess('data', im_data1)
+    caffemodel.blobs['I'].data[1][...] = transformer.preprocess('data', im_data2)
+    feature = caffemodel.forward()
+    feature1 = feature['fc5'][0]
+    feature2 = feature['fc5'][1]
+#    feature1=feature_Extract(caffemodel,bbox1,image1,W,H).copy()
+#    feature2=feature_Extract(caffemodel,bbox2,image2,W,H)
+#    score=numpy.dot(feature1,feature2.T)/numpy.sqrt(numpy.dot(feature1,feature1.T)*numpy.dot(feature2,feature2.T))-0.15
+#    score=round(100*max(min(score*2,1),0))
+    score = numpy.dot(feature1, feature2.T) / numpy.sqrt(numpy.dot(feature1, feature1.T) * numpy.dot(feature2, feature2.T)) - 0.15
+    score = round(100 * max(min(score * 2, 1), 0))
+    return score
+
+
+
 def face_Extract(caffemodel,bbox1,bbox2,image1,image2):
     H=128
     W=128
@@ -138,12 +217,6 @@ def face_Extract(caffemodel,bbox1,bbox2,image1,image2):
     score=round(100*max(min(score*2,1),0))
     return score
 
-def faceSimilarityCompare(caffemodel1,caffemodel2,image1,image2,minsize):
-    [bbox1, Ip1] = FaceDetect(image1, minsize, caffemodel1)
-    [bbox2, Ip2] = FaceDetect(image2, minsize, caffemodel1)
-    similarity = face_Extract(caffemodel2, bbox1, bbox2, Ip1, Ip2)
-    return similarity
-    pass
 
 if __name__=='__main__':
     root = "/home/luka/PycharmProjects/cvlab/"
@@ -167,10 +240,16 @@ if __name__=='__main__':
     #cv2.rectangle(Ip1,(a,b),(c,d),(0,255,0),5)
     #cv2.imwrite('messigray.png',Ip1)
 
-    root = "/home/luka/PycharmProjects/cvlab/"
+    ''' 
     deploy = root + "protobuf/deploy_p.prototxt"
     caffe_model = root + "protobuf/pm_iter_78000.caffemodel"
-#
     net = caffe.Net(deploy,caffe_model,caffe.TEST)
     similarity=face_Extract(net,bbox1,bbox2,Ip1,Ip2)
+    '''
+    deploy = root + "protobuf/train_test.prototxt"
+    caffe_model = root + "protobuf/_iter_70000.caffemodel"
+    #
+    net = caffe.Net(deploy, caffe_model, caffe.TEST)
+    similarity = face_Extract2(net, bbox1, bbox2, Ip1, Ip2)
+
     print(similarity)
