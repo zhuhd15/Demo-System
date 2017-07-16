@@ -39,3 +39,7 @@ def databaseRenew(personalInformation):
     :return:None
     '''
     pass
+
+
+if __name__=="__main__":
+    databaseInit()

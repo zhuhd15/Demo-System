@@ -1,4 +1,4 @@
-from face_detection import faceSimilarityCompare
+from .face_detection import faceSimilarityCompare
 
 def spider(img,caffemodel1,caffemodel2):
     '''

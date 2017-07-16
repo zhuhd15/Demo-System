@@ -1,5 +1,5 @@
-from uiMainwindow import Ui_MainWindow
-from uiwindow2 import Ui_Dialog
+from .uiMainwindow import Ui_MainWindow
+from .uiwindow2 import Ui_Dialog
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import QWidget
 from PyQt5.QtGui import *

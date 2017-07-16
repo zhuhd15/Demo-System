@@ -278,3 +278,6 @@ def showSVM(svm):
     y_max_x = float(-svm.b - w[0] * max_x) / w[1]
     plt.plot([min_x, max_x], [y_min_x, y_max_x], '-g')
     plt.show()
+
+if __name__ == "__main__":
+    pass

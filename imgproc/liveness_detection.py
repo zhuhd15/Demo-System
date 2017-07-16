@@ -1,7 +1,7 @@
 import cv2
 import numpy,pickle
-from svm_train import resultSVM
-from liveness_train import featureGenerate,caffe
+from .svm_train import resultSVM
+from .liveness_train import featureGenerate,caffe
 
 def liveness_detection(image,caffemodel,svmModels):
     picFeatures = featureGenerate(caffemodel,image)

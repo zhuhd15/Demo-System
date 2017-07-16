@@ -1,9 +1,18 @@
-import numpy
 import cv2
-from svm_train import *
-import matplotlib,os,pickle,caffe
-from face_detection import FaceDetect
-from LBP import LBP,faceLBP,colorMoment
+from .svm_train import *
+import os,pickle,caffe
+from .face_detection import FaceDetect
+from .LBP_pattern import *
+import caffe
+import os
+import pickle
+
+import cv2
+
+from .LBP_pattern import *
+from .face_detection import FaceDetect
+from .svm_train import *
+
 
 def livenessTrain(filepaths,labels,caffemodel):
     slackVariables = 0.1

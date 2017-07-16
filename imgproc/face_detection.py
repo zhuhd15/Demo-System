@@ -253,3 +253,6 @@ if __name__=='__main__':
     similarity = face_Extract2(net, bbox1, bbox2, Ip1, Ip2)
 
     print(similarity)
+
+if __name__=="__main__":
+    pass
