@@ -54,8 +54,8 @@ def FaceDetect(im,min_size,net):
     label_img = measure.label(scoresOut, connectivity = 2)
     bd=measure.regionprops(label_img)
 
-    if bd==():
-        pass
+    if bd==[]:
+        return [[],[]]
 
     mx_area=0
     for x in bd:
@@ -141,7 +141,7 @@ def feature_Extract(caffemodel,bbox,image,W,H):
 #    cv2.imshow('tst',im_data)
 #    cv2.waitKey(0)
     im_data = numpy.array(im_data, dtype=numpy.single) / 255
-    transformer = caffe.io.Transformer({'data': net.blobs['I'].data.shape})
+    transformer = caffe.io.Transformer({'data': caffemodel.blobs['I'].data.shape})
     caffemodel.blobs['I'].data[...] = transformer.preprocess('data', im_data)
     feature = caffemodel.forward()
     return feature['fc5'][0]
@@ -254,5 +254,3 @@ if __name__=='__main__':
 
     print(similarity)
 
-if __name__=="__main__":
-    pass
