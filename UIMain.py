@@ -1,3 +1,4 @@
+#five face to find the different area
 from GUI.uiMainwindow import Ui_MainWindow
 from GUI.uiwindow2 import Ui_Dialog
 import caffe, sys,threading
@@ -28,11 +29,11 @@ class Camera(QMainWindow, Ui_MainWindow):
         self.timerSet = QTimer()                                                         #input the data
         self.backColor = QPixmap(self.label.size()).fill(Qt.white)
         self.label.autoFillBackground()
-        self.timer.setInterval(20)
+        self.timer.setInterval(10)
         self.timerRec.setInterval(1000)
         self.timerSet.setInterval(15000)                                              #milisecond
         self.timer.timeout.connect(self.showCamera)
-        self.timerRec.timeout.connect(self.recognize)
+        self.timerRec.timeout.connect(self.preRecognize)
         self.timerSet.timeout.connect(self.dataAppend)
         self.pushButton.setCheckable(True)
         self.pushButton.clicked[bool].connect(self.startCamera)
@@ -80,6 +81,23 @@ class Camera(QMainWindow, Ui_MainWindow):
         self.image = QImage(self.img2.data, width, height, bytesPerLine, QImage.Format_RGB888)
         self.label.setPixmap(QPixmap.fromImage(self.image))
 
+    def preRecognize(self):
+        pic1 = self.img.copy()
+        time.sleep(0.02)
+        pic2 = self.img.copy()
+        time.sleep(0.02)
+        pic3 = self.img.copy()
+        [bboxCam1, imgCam1] = FaceDetect(pic1, 50, self.detectionModel)
+        [bboxCam2, imgCam2] = FaceDetect(pic2, 50, self.detectionModel)
+        [bboxCam3, imgCam3] = FaceDetect(pic3, 50, self.detectionModel)
+        leftup1 = max(bboxCam1[0],bboxCam2[0],bboxCam3[0])
+        leftup2 = max(bboxCam1[1],bboxCam2[1],bboxCam3[1])
+        rightdown1 = min(bboxCam1[0]+bboxCam1[2],bboxCam2[0]+bboxCam2[2],bboxCam3[0]+bboxCam3[2])
+        rightdown2 = min(bboxCam1[1]+bboxCam1[3],bboxCam2[1]+bboxCam2[3],bboxCam3[1]+bboxCam3[3])
+        if rightdown2 <= leftup2 or rightdown1 <= leftup1:
+            return None
+        self.recognize()
+        pass
 
     def recognize(self):
         [self.bboxCam, self.imgCam] = FaceDetect(self.img, 50, self.detectionModel)
@@ -107,8 +125,13 @@ class Camera(QMainWindow, Ui_MainWindow):
         self.label_2.setPixmap(QPixmap(self.photo))                #recover
         if self.tempList['valid']==False:
             self.tempList['valid']=True
-        for items in self.tempList['data']:                     #further recover from the front
-            pass
+        startVariable = max(0,len(self.tempList['data'])-100)
+        for items in range(startVariable,len(self.tempList['data'])):   #further recover from the front
+            info = self.tempList['data']
+            if abs(feature*info['feature']-0.15<0.25):
+                if abs(timelabel-info['time']<10):
+                    return None
+        pass
         feaMap = {'time':timelabel,'feature':feature}
         self.tempList['data'].append(feaMap)
         print(self.tempList['valid'],len(self.tempList['data']))
