@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1080</width>
-    <height>632</height>
+    <width>1310</width>
+    <height>711</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -20,7 +20,7 @@
       <x>10</x>
       <y>40</y>
       <width>681</width>
-      <height>491</height>
+      <height>601</height>
      </rect>
     </property>
     <property name="frameShape">
@@ -29,13 +29,13 @@
     <property name="frameShadow">
      <enum>QFrame::Raised</enum>
     </property>
-    <widget class="QLabel" name="label">
+    <widget class="QLabel" name="Qtvideo">
      <property name="geometry">
       <rect>
        <x>10</x>
-       <y>10</y>
+       <y>20</y>
        <width>661</width>
-       <height>471</height>
+       <height>551</height>
       </rect>
      </property>
      <property name="text">
@@ -46,8 +46,8 @@
    <widget class="QWidget" name="verticalLayoutWidget">
     <property name="geometry">
      <rect>
-      <x>910</x>
-      <y>330</y>
+      <x>1130</x>
+      <y>420</y>
       <width>160</width>
       <height>221</height>
      </rect>
@@ -101,7 +101,7 @@
     <property name="frameShadow">
      <enum>QFrame::Raised</enum>
     </property>
-    <widget class="QLabel" name="label_2">
+    <widget class="QLabel" name="QtHomepage">
      <property name="geometry">
       <rect>
        <x>10</x>
@@ -118,10 +118,10 @@
    <widget class="QWidget" name="horizontalLayoutWidget">
     <property name="geometry">
      <rect>
-      <x>700</x>
-      <y>340</y>
+      <x>1090</x>
+      <y>180</y>
       <width>201</width>
-      <height>191</height>
+      <height>231</height>
      </rect>
     </property>
     <layout class="QHBoxLayout" name="horizontalLayout">
@@ -131,6 +131,13 @@
         <widget class="QLabel" name="label_5">
          <property name="text">
           <string>Name</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_3">
+         <property name="text">
+          <string>FirstVisit</string>
          </property>
         </widget>
        </item>
@@ -146,16 +153,103 @@
      <item>
       <layout class="QVBoxLayout" name="verticalLayout_3">
        <item>
-        <widget class="QLabel" name="label_3">
+        <widget class="QLabel" name="QtuserName">
          <property name="text">
           <string>(Null)</string>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="QLabel" name="label_6">
+        <widget class="QLabel" name="QtFirstVisit">
          <property name="text">
           <string>(Null)</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QVBoxLayout" name="verticalLayout_6">
+         <item>
+          <widget class="QLabel" name="QtVisit1">
+           <property name="text">
+            <string>(Null)</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="QtVisit2">
+           <property name="text">
+            <string>(Null)</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="QtVisit3">
+           <property name="text">
+            <string>((Null)</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </item>
+    </layout>
+   </widget>
+   <widget class="QWidget" name="horizontalLayoutWidget_2">
+    <property name="geometry">
+     <rect>
+      <x>700</x>
+      <y>340</y>
+      <width>371</width>
+      <height>301</height>
+     </rect>
+    </property>
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <layout class="QVBoxLayout" name="verticalLayout_4">
+       <item>
+        <widget class="QLabel" name="label_7">
+         <property name="text">
+          <string>People you may know</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="QtName1">
+         <property name="text">
+          <string>Name1</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="QtName2">
+         <property name="text">
+          <string>Name2</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QVBoxLayout" name="verticalLayout_5">
+       <item>
+        <widget class="QLabel" name="NULL_">
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="QtPhoto1">
+         <property name="text">
+          <string>Photo1</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="QtPhoto2">
+         <property name="text">
+          <string>Photo2</string>
          </property>
         </widget>
        </item>
@@ -163,13 +257,26 @@
      </item>
     </layout>
    </widget>
+   <widget class="QLabel" name="QtPhoto">
+    <property name="geometry">
+     <rect>
+      <x>1090</x>
+      <y>40</y>
+      <width>191</width>
+      <height>131</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1080</width>
+     <width>1310</width>
      <height>31</height>
     </rect>
    </property>

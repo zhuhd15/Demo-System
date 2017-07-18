@@ -114,19 +114,26 @@ class Camera(QMainWindow, Ui_MainWindow):
             return None
         if 'name' in information:
             self.name = information['name']
-            self.label_3.setText(self.name)
+            self.QtuserName.setText(self.name)
         if 'recentVisit' in information:
             self.recent = information['recentVisit']
-            self.label_6.setText(str(self.recent[0]))
+            self.QtVisit1.setText(str(self.recent[0]))
+            self.QtVisit2.setText(str(self.recent[1]))
+            self.QtVisit3.setText(str(self.recent[2]))
         if 'firstVisit' in information:
-            self.record = information['firstVisit']
+            self.QtFirstVisit.setText(str(information['firstVisit']))
         if 'pageAddress' in information:
             self.homePage = information['pageAddress']
+            self.QtHomepage.setPixmap(QPixmap(self.homePage))
         if 'famiPeople' in information:
             self.relationship = information['famiPeople']
+            self.QtName1.setText(self.relationship[0]['name'])
+            self.QtName2.setText(self.relationship[1]['name'])
+            self.QtPhoto1.setPixmap(QPixmap(self.relationship[0]['photoAdd']))
+            self.QtPhoto2.setPixmap(QPixmap(self.relationship[1]['photoAdd']))
         if 'photo' in information:
-            self.photo = information['photo']
-        self.label_2.setPixmap(QPixmap(self.photo))                #recover
+            self.photo = information['photo']                #recover
+            self.QtPhoto.setPixmap(QPixmap(self.photo))
         if self.tempList['valid']==False:
             self.tempList['valid']=True
         startVariable = max(0,len(self.tempList['data'])-100)
