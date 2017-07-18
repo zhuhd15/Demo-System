@@ -114,8 +114,10 @@ class Camera(QMainWindow, Ui_MainWindow):
             return None
         if 'name' in information:
             self.name = information['name']
+            self.label_3.setText(self.name)
         if 'recentVisit' in information:
             self.recent = information['recentVisit']
+            self.label_6.setText(str(self.recent[0]))
         if 'firstVisit' in information:
             self.record = information['firstVisit']
         if 'pageAddress' in information:
