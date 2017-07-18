@@ -8,13 +8,14 @@ from PyQt5.QtWidgets import *
 
 from database.Database import *
 from imgproc.face_detection import *
+from imgproc.liveness_detection import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 import sys, os,time,cv2
 
 class Camera(QMainWindow, Ui_MainWindow):
-    def __init__(self, cameraNum,detectionModel,recognitionModel,parent=None):
+    def __init__(self, cameraNum,detectionModel,recognitionModel,svmModels,parent=None):
         super(Camera, self).__init__(parent)
         self.cameraNum = cameraNum
         self.device = cv2.VideoCapture(cameraNum)
@@ -22,6 +23,7 @@ class Camera(QMainWindow, Ui_MainWindow):
         self.recognitionModel = recognitionModel
         self.recog = False
         self.tempList = {'valid': False, 'data': []}
+        self.svmModels = svmModels
 
         self.setupUi(self)
         self.timer = QTimer()                                                           #show on screen
@@ -132,6 +134,9 @@ class Camera(QMainWindow, Ui_MainWindow):
                 if abs(timelabel-info['time']<10):
                     return None
         pass
+        #truthness = livenessDetectNoCaffe(self.imgCam,self.bboxCam,self.svmModels)
+        #if ~truthness:
+        #    return None
         feaMap = {'time':timelabel,'feature':feature}
         self.tempList['data'].append(feaMap)
         print(self.tempList['valid'],len(self.tempList['data']))
@@ -168,8 +173,11 @@ def main():
     recognitionModel = caffe.Net(RecognitionPrototxt, RecognitionCaffeModel, caffe.TEST)
     # GUI init
 
+    svmAddress = 'home/luka/Github/Demo-System/database/svm.data'
+    with open(svmAddress,'rb') as svmFile:
+        svmModels = pickle.load(svmFile)
     app = QApplication(sys.argv)
-    form = Camera(0,detectionModel,recognitionModel)
+    form = Camera(0,detectionModel,recognitionModel,svmModels)
     form.show()
     app.exec_()
     pass

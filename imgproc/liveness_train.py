@@ -70,6 +70,25 @@ def livenessLabel(caffemodel,filePath,label):
     labels = label * i
     return [labels,groupLBP,groupCM,groupFeatures]
 
+def featureGen(Ip,bbox):
+    a = int(bbox[0])
+    b = int(bbox[1])
+    c = int(bbox[2])
+    d = int(bbox[3])
+    if bbox[2] < 100 or bbox[3] < 100:
+        return []
+    faceImg = Ip[b:(b + d), a: (a + c)]
+    faceImg = cv2.resize(faceImg, (144, 120), interpolation=cv2.INTER_CUBIC)[:, :, 0]
+    facePattern = LBP(faceImg)
+    lbp = []
+    for x in range(0, 113, 16):
+        for y in range(0, 97, 16):
+            pix = facePattern[x:min(x + 31, 142), y:min(y + 31, 118)]
+            lbpValue = faceLBP(pix)
+            lbp = lbp + lbpValue
+    colour_moment = colorMoment(faceImg)
+    return [lbpValue, colour_moment]
+    pass
 
 def featureGenerate(caffemodel,picture):
     picture = cv2.cvtColor(picture,cv2.COLOR_BGR2RGB)
