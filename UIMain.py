@@ -5,6 +5,7 @@ import caffe, sys,threading
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
+from selenium import webdriver
 
 from database.Database import *
 from imgproc.face_detection import *
@@ -124,7 +125,9 @@ class Camera(QMainWindow, Ui_MainWindow):
             self.QtFirstVisit.setText(str(information['firstVisit']))
         if 'pageAddress' in information:
             self.homePage = information['pageAddress']
-            self.QtHomepage.setPixmap(QPixmap(self.homePage))
+            if self.homePage!= '':
+                screenShot(self.homePage)
+            self.QtHomepage.setPixmap(QPixmap('shot.png'))
         if 'famiPeople' in information:
             self.relationship = information['famiPeople']
             self.QtName1.setText(self.relationship[0]['name'])
@@ -191,6 +194,12 @@ def main():
     app.exec_()
     pass
 
+def screenShot(url):
+    browser = webdriver.PhantomJS()
+    browser.set_window_size(1055, 800)
+    browser.get(url)
+    browser.save_screenshot("shot.png")
+    browser.quit()
 
 
 if __name__ == '__main__':
