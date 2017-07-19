@@ -88,6 +88,7 @@ def get_Img(start_url, url, infos):
     #create new folder
     path = "d:\THU\Demo-System\Spider"
     title = time.strftime("%Y_%m_%d", time.localtime())
+    new_path = os.path.join(path, title)
     if not os.path.isdir(new_path):
         os.makedirs(new_path)
 
