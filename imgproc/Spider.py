@@ -186,7 +186,7 @@ def SpiderRenewer(info,caffemodel1):
     :param information(dict): personal information of the existing person
     :param image(list):       existing image in the database
     :param caffemodel:        caffemodel to compare the similarity between two pictures
-    :return:(dict){'name':,'address':,'tel':,'fax':.'email':,'academic':,'image_url':,'profile_url':}
+    :return:(dict){'name':,'address':,'tel':,'fax':.'email':,'academic':,'image_url':,'profile_url':,'image'(ltst)}
     '''
     initial_url = 'http://www.ee.tsinghua.edu.cn'  # ee page
     if info['name']!='[]':
@@ -209,16 +209,16 @@ def SpiderRenewer(info,caffemodel1):
         H=512*r
         H=int(H)
         W=512
-    
 
-    #print(image2.shape)
+    min_size = 50
+    image2 = numpy.array(cv2.resize(img, (W, H)))
+
     #cv2.imshow('changed size',img)
     #cv2.waitKey(1000)
     #cv2.imshow('array', image2)
     #cv2.waitKey(2000)
 
-    min_size = 50
-    image2 = numpy.array(cv2.resize(img, (W, H)))
+    new_info['image']=image2
     feature = []
     #dealing with score larger than a threshold
 
