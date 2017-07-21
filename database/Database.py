@@ -38,6 +38,13 @@ def featureDist(feature0 ,feature1):
     return dist
     pass
 
+def featureTransvection(feature0 ,feature1):
+    trans = 0
+    for i in range(0,512):
+        trans += feature0[i] * feature1[i]
+    return trans
+    pass
+
 def databaseInit():
     #database init
     conn = MySQLdb.connect(host = '127.0.0.1', port = 3306, user = 'Demo-SystemAdmin', passwd = '666666', db = 'Demo-SystemDatabase', charset = 'utf8')
@@ -229,23 +236,24 @@ def databaseFind(feature):
         tmpFeature = numpy.array(tmpFeature)
         tmpDimFeature = tmpFeature[tmpInfo[3]]
         tmpDist = featureDist(tmpFeature, feature)
-        if len(ans) < 5:
-            ans.append(i)
-            dist.append(tmpDist)
-            for j in range(0,len(ans) - 1):
-                for k in range(j+1,len(ans)):
-                    if dist[j] > dist[k]:
-                        ans[j], ans[k] = ans[k], ans[j]
-                        dist[j], dist[k] = dist[k], dist[j]
-        else:
-            for j in range(0,5):
-                if tmpDist < dist[j]:
-                    for k in range(-3,-j+1):
-                        ans[-k+1] = ans[-k]
-                        dist[-k+1] = dist[-k]
-                    ans[j] = i
-                    dist[j] = tmpDist
-                    break
+        if (tmpDist < 0.95):
+            if (len(ans) < 5):
+                ans.append(i)
+                dist.append(tmpDist)
+                for j in range(0,len(ans) - 1):
+                    for k in range(j+1,len(ans)):
+                        if dist[j] > dist[k]:
+                            ans[j], ans[k] = ans[k], ans[j]
+                            dist[j], dist[k] = dist[k], dist[j]
+            else:
+                for j in range(0,5):
+                    if (tmpDist < dist[j]) and (tmpDist < 0.95):
+                        for k in range(-3,-j+1):
+                            ans[-k+1] = ans[-k]
+                            dist[-k+1] = dist[-k]
+                        ans[j] = i
+                        dist[j] = tmpDist
+                        break
         tmpDist = ((feature[tmpInfo[3]] - tmpDimFeature) ** 2)** 0.5
         if (tmpInfo[1] != 0 and not(tmpInfo[1] in que)):
             cur.execute("select * from feature" + str(tmpInfo[1]))
@@ -254,7 +262,7 @@ def databaseFind(feature):
                 tmp = cur.fetchone()
                 tmpFeature.append(tmp[1])
             tmpFeature = numpy.array(tmpFeature)
-            if (featureDist(feature, tmpFeature) < dist[len(dist) - 1]) or (tmpDist < dist[len(dist) - 1]):
+            if (len(dist) != 0) and ((featureDist(feature, tmpFeature) < dist[len(dist) - 1]) or (tmpDist < dist[len(dist) - 1])):
                 que.append(tmpInfo[1])
         if (tmpInfo[2] != 0 and not(tmpInfo[2] in que)):
             cur.execute("select * from feature" + str(tmpInfo[2]))
@@ -263,24 +271,41 @@ def databaseFind(feature):
                 tmp = cur.fetchone()
                 tmpFeature.append(tmp[1])
             tmpFeature = numpy.array(tmpFeature)
-            if (featureDist(feature, tmpFeature) < dist[len(dist) - 1]) or (tmpDist < dist[len(dist) - 1]):
+            if (len(dist) != 0) and ((featureDist(feature, tmpFeature) < dist[len(dist) - 1]) or (tmpDist < dist[len(dist) - 1])):
                 que.append(tmpInfo[2])
-    tmpList = []
-    for i in range(1,n + 1):
+    return ans
+    conn.commit()
+    cur.close()
+    conn.close()
+    pass
+
+def databaseRenew(informationDict):
+    '''
+    renew the information in the database.
+    informationDict{(the renewed information needs to be wrote in the database), 'feature':[ Normalized Eigenvalue ]}
+    return:None
+    '''
+    conn = MySQLdb.connect(host = '127.0.0.1', port = 3306, user = 'Demo-SystemAdmin', passwd = '666666', db = 'Demo-SystemDatabase', charset = 'utf8')
+    cur = conn.cursor()
+    commonList = databaseFind(informationDict['feature'])
+    tmpId = 0
+    tmpTrans = 0.55
+    for i in commonList
         cur.execute("select * from feature" + str(i))
         tmpFeature = []
         for j in range(0,512):
             tmp = cur.fetchone()
             tmpFeature.append(tmp[1])
         tmpFeature = numpy.array(tmpFeature)
-        tmpList.append(featureDist(feature, tmpFeature))
-    tmpList.sort()
-    for i in range(0,10):
-        print(tmpList[i])
-    print(ans)
-    print(dist)
-    print(len(que))
-    print(que)
+        trans = featureTransvection(informationDict['feature'], tmpFeature)
+        if trans < tmpTrans:
+            tmpTrans = trans
+            tmpId = i
+    if tmpId == 0:
+        return
+    cur.execute("update user set photoAdd = {} where idNo = {}".format(informationDict['photoAdd'], tmpId))
+    cur.execute("update user set name = {} where idNo = {}".format(informationDict['name'], tmpId))
+    cur.execute("update user set pageAdd = {} where idNo = {}".format(informationDict['pageAdd'], tmpId))
     conn.commit()
     cur.close()
     conn.close()
@@ -309,19 +334,49 @@ def databaseSearch(feature):
     '''
     conn = MySQLdb.connect(host = '127.0.0.1', port = 3306, user = 'Demo-SystemAdmin', passwd = '666666', db = 'Demo-SystemDatabase', charset = 'utf8')
     cur = conn.cursor()
-    conn.commit()
-    cur.close()
-    conn.close()
-    pass
-
-def databaseRenew(informationDict):
-    '''
-    renew the information in the database.
-    informationDict{(the renewed information needs to be wrote in the database), 'feature':[ Normalized Eigenvalue ]}
-    return:None
-    '''
-    conn = MySQLdb.connect(host = '127.0.0.1', port = 3306, user = 'Demo-SystemAdmin', passwd = '666666', db = 'Demo-SystemDatabase', charset = 'utf8')
-    cur = conn.cursor()
+    informationDict = dict()
+    informationDict = fillInfo(informationDict)
+    commonList = databaseFind(feature)
+    tmpId = 0
+    tmpTrans = 0.55
+    for i in commonList
+        cur.execute("select * from feature" + str(i))
+        tmpFeature = []
+        for j in range(0,512):
+            tmp = cur.fetchone()
+            tmpFeature.append(tmp[1])
+        tmpFeature = numpy.array(tmpFeature)
+        trans = featureTransvection(informationDict['feature'], tmpFeature)
+        if trans < tmpTrans:
+            tmpTrans = trans
+            tmpId = i
+    if tmpId == 0:
+        return informationDict
+    cur.execute("select * from user where idNo = {}".format(tmpId))
+    tmpInfo = cur.fetchone()
+    informationDict['photoAdd'] = tmpInfo[4]
+    informationDict['name'] = tmpInfo[5]
+    informationDict['pageAdd'] = tmpInfo[6]
+    informationDict['firstVisit'] = tmpInfo[7]
+    informationDict['visit0'] = tmpInfo[8]
+    informationDict['visit1'] = tmpInfo[9]
+    informationDict['visit2'] = tmpInfo[10]
+    informationDict['famiPeople0'] = tmpInfo[11]
+    informationDict['famiPeople1'] = tmpInfo[12]
+    informationDict['famiPeople2'] = tmpInfo[13]
+    informationDict['famiPeople3'] = tmpInfo[14]
+    informationDict['famiPeople4'] = tmpInfo[15]
+    informationDict['famiPeople5'] = tmpInfo[16]
+    informationDict['famiPeople6'] = tmpInfo[17]
+    informationDict['famiPeople7'] = tmpInfo[18]
+    informationDict['famiPeople8'] = tmpInfo[19]
+    informationDict['famiPeople9'] = tmpInfo[20]
+    informationDict['tempFamiPeople0'] = tmpInfo[21]
+    informationDict['tempFamiPeople1'] = tmpInfo[22]
+    informationDict['tempFamiPeople2'] = tmpInfo[23]
+    informationDict['tempFamiPeople3'] = tmpInfo[24]
+    informationDict['tempFamiPeople4'] = tmpInfo[25]
+    return informationDict
     conn.commit()
     cur.close()
     conn.close()
@@ -334,51 +389,15 @@ def databaseRequest():
     '''
     conn = MySQLdb.connect(host = '127.0.0.1', port = 3306, user = 'Demo-SystemAdmin', passwd = '666666', db = 'Demo-SystemDatabase', charset = 'utf8')
     cur = conn.cursor()
-    infoCnt = cur.execute("select * from user")
-    info = cur.fetchmany(infoCnt)
-    for i in info:
-        if (i[2] == None) or (i[3] == None):
-            cur.execute("select * from feature" + str(i[0]))
-            feature = []
-            for j in range(0,512):
-                tmp = cur.fetchone()
-                feature.append(tmp[1])
-            feature = numpy.array(feature)
-            informationDict = dict()
-            informationDict['name'] = [i[2]]
-            informationDict['pageAdd'] = [i[3]]
-            informationDict['feature'] = [feature]
-            return informationDict
     conn.commit()
     cur.close()
     conn.close()
     pass
 
 if __name__=="__main__":
-    n = 100
-    databaseInit()
     conn = MySQLdb.connect(host = '127.0.0.1', port = 3306, user = 'Demo-SystemAdmin', passwd = '666666', db = 'Demo-SystemDatabase', charset = 'utf8')
     cur = conn.cursor()
-    s = []
-    for k in range(0,n):
-        a = []
-        length = 0
-        for i in range(0,512):
-            a.append(random.uniform(-1,1))
-            length += a[i]*a[i]
-        length = length ** 0.5
-        for i in range(0,512):
-            a[i] /= length
-        a = numpy.array(a)
-        s.append(a)
-        info = dict()
-        info['name'] = 'HaHaTa' + str(k)
-        info['firstVisit'] = 20170719101600 + random.randint(0,60)
-        info['feature'] = a
-        databaseInsert(info)
-        print("feature" + str(k+1) + " inserted!")
-    a = s[0]
-    databaseFind(a)
+    databaseInit()
     conn.commit()
     cur.close()
     conn.close()
