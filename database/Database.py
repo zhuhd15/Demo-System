@@ -233,8 +233,11 @@ def databaseFind(feature):
     '''
     conn = MySQLdb.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
     cur = conn.cursor()
-    global root
-    pt = root
+    infoCnt = cur.execute("select * from user")
+    if infoCnt > 0:
+        pt = 1
+    else:
+        pt = 0
     dimNo = 0
     tmpId = 0
     que = []
@@ -321,8 +324,10 @@ def databaseRenew(informationDict):
     '''
     conn = MySQLdb.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
     cur = conn.cursor()
+    informationDict = fillInfo(informationDict)
     commonList = databaseFind(informationDict['feature'])
     if len(commonList) == 0:
+        information['firstVisit'] = information['visit0']
         databaseInsert(informationDict)
         return
     tmpId = 0
@@ -340,14 +345,30 @@ def databaseRenew(informationDict):
             tmpId = i
     if tmpId == 0:
         return
-    cur.execute("update user set img_path = {} where idNo = {}".format(informationDict['img_path'], tmpId))
-    cur.execute("update user set name = {} where idNo = {}".format(informationDict['name'], tmpId))
-    cur.execute("update user set address = {} where idNo = {}".format(informationDict['address'], tmpId))
-    cur.execute("update user set tel = {} where idNo = {}".format(informationDict['tel'], tmpId))
-    cur.execute("update user set fax = {} where idNo = {}".format(informationDict['fax'], tmpId))
-    cur.execute("update user set email = {} where idNo = {}".format(informationDict['email'], tmpId))
-    cur.execute("update user set academic = {} where idNo = {}".format(informationDict['academic'], tmpId))
-    cur.execute("update user set url = {} where idNo = {}".format(informationDict['url'], tmpId))
+    if informationDict['img_path'] != '':
+        cur.execute("update user set img_path = {} where idNo = {}".format(informationDict['img_path'], tmpId))
+    if informationDict['name'] != '':
+        cur.execute("update user set name = {} where idNo = {}".format(informationDict['name'], tmpId))
+    if informationDict['address'] != '':
+        cur.execute("update user set address = {} where idNo = {}".format(informationDict['address'], tmpId))
+    if informationDict['tel'] != '':
+        cur.execute("update user set tel = {} where idNo = {}".format(informationDict['tel'], tmpId))
+    if informationDict['fax'] != '':
+        cur.execute("update user set fax = {} where idNo = {}".format(informationDict['fax'], tmpId))
+    if informationDict['email'] != '':
+        cur.execute("update user set email = {} where idNo = {}".format(informationDict['email'], tmpId))
+    if informationDict['academic'] != '':
+        cur.execute("update user set academic = {} where idNo = {}".format(informationDict['academic'], tmpId))
+    if informationDict['url'] != '':
+        cur.execute("update user set url = {} where idNo = {}".format(informationDict['url'], tmpId))
+    if information['visit0'] != 0:
+        cur.execute("select * from user where idNo = {}",tmpId)
+        tmpInfo = cur.fetchonr()
+        cur.execute("update user set visit2 = {} where idNo = {}".format(tmpInfo[14], tmpId))
+        cur.execute("update user set visit1 = {} where idNo = {}".format(tmpInfo[13], tmpId))
+        cur.execute("update user set visit0 = {} where idNo = {}".format(information['visit0'], tmpId))
+        if tmpInfo[12] == 0:
+            cur.execute("update user set firstVisit = {} where idNo = {}".format(information['visit0'], tmpId))
     conn.commit()
     cur.close()
     conn.close()
@@ -362,6 +383,12 @@ def databaseAppend(tempList):
     '''
     conn = MySQLdb.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
     cur = conn.cursor()
+    for i in tempList:
+        informationDict = dict()
+        informationDict = fillInfo(informationDict)
+        informationDict['feature'] = i['feature']
+        informationDict['visit0'] = i['time']
+        databaseRenew(informationDict)
     conn.commit()
     cur.close()
     conn.close()
