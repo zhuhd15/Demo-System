@@ -1,4 +1,4 @@
-import MySQLdb
+import pymysql
 import numpy
 import random
 import time
@@ -64,7 +64,7 @@ def databaseInit():
     database init
     set up table user
     '''
-    conn = MySQLdb.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
+    conn = pymysql.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
     cur = conn.cursor()
     cur.execute("""
     create table if not exists user
@@ -114,7 +114,7 @@ def databaseInsert(informationDict):
     return:None
     '''
     informationDict = fillInfo(informationDict)
-    conn = MySQLdb.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
+    conn = pymysql.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
     cur = conn.cursor()
     infoCnt = cur.execute("select * from user")
     if infoCnt > 0:
@@ -231,7 +231,7 @@ def databaseFind(feature):
     find the nearest point to the feature on the K-dimensional Tree
     return:[{feature}, {}, {}, {}, {}]
     '''
-    conn = MySQLdb.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
+    conn = pymysql.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
     cur = conn.cursor()
     infoCnt = cur.execute("select * from user")
     if infoCnt > 0:
@@ -322,7 +322,7 @@ def databaseRenew(informationDict):
     informationDict{(the renewed information needs to be wrote in the database), 'feature':[ Normalized Eigenvalue ]}
     return:None
     '''
-    conn = MySQLdb.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
+    conn = pymysql.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
     cur = conn.cursor()
     informationDict = fillInfo(informationDict)
     commonList = databaseFind(informationDict['feature'])
@@ -381,7 +381,7 @@ def databaseAppend(tempList):
     list{'time':20170101170506, 'feature':[ Normalized Eigenvalue ]}
     return:None
     '''
-    conn = MySQLdb.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
+    conn = pymysql.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
     cur = conn.cursor()
     for i in tempList:
         informationDict = dict()
@@ -401,7 +401,7 @@ def databaseSearch(feature):
     return:{'name':<str>, 'famiPeople':[{'name':<str>, 'photoAdd':<str>},{},{}], 'recentVisit':[int,int,int], 'firstVisit':int, 'pageAdd':<str>, 'photoAdd':<str>}
     if there's nothing about the feature, then try a null dict.
     '''
-    conn = MySQLdb.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
+    conn = pymysql.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
     cur = conn.cursor()
     informationDict = dict()
     informationDict = fillInfo(informationDict)
@@ -471,7 +471,7 @@ def DatabaseBase():
     caffemodel = [detectionModel, recognitionModel]
     tmpList = spider.Spider(caffemodel)
 
-    conn = MySQLdb.connect(host='127.0.0.1', port=3306, user='root', passwd='666666', db='DemoSystemDatabase', charset='utf8')
+    conn = pymysql.connect(host='127.0.0.1', port=3306, user='root', passwd='666666', db='DemoSystemDatabase', charset='utf8')
     cur = conn.cursor()
     databaseInit()
     for i in tmpList:
@@ -488,7 +488,7 @@ def DatabaseBase():
 
 if __name__=="__main__":
     DatabaseBase()
-    '''conn = MySQLdb.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
+    '''conn = pymysql.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
     cur = conn.cursor()'''
     '''information = {'name': "['张志军']", 'address': ['???'], 'email': "['电子邮箱：??']",
                    'feature': [6.73086708e-03, -2.94301827e-02, 1.45628629e-02,
