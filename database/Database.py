@@ -1,10 +1,11 @@
-import pymysql
+import MySQLdb
 import numpy
-import sys
-sys.path.append('/home/luka/PycharmProjects/Github/Demo-System')
-import spider,caffe
-import spider2
-root = 1
+import random
+import time
+#import sys
+#sys.path.append('/home/luka/PycharmProjects/Github/Demo-System')
+#import spider,caffe
+#import spider2
 
 def fillInfo(informationDict):
     if (not 'leftson' in informationDict.keys()):
@@ -59,8 +60,11 @@ def featureTransvection(feature0 ,feature1):
     pass
 
 def databaseInit():
-    #database init
-    conn = pymysql.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
+    '''
+    database init
+    set up table user
+    '''
+    conn = MySQLdb.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
     cur = conn.cursor()
     cur.execute("""
     create table if not exists user
@@ -110,10 +114,14 @@ def databaseInsert(informationDict):
     return:None
     '''
     informationDict = fillInfo(informationDict)
-    conn = pymysql.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
+    conn = MySQLdb.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
     cur = conn.cursor()
-    global root
-    pt = root
+    infoCnt = cur.execute("select * from user")
+    if infoCnt > 0:
+        pt = 1
+    else:
+        pt = 0
+    infoCnt = infoCnt + 1
     dimNo = 0
     tmpId = 0
     sonTag = -1
@@ -135,10 +143,6 @@ def databaseInsert(informationDict):
             sonTag = 2
         dimNo = dimNo + 1
         dimNo = dimNo % 512
-    infoCnt = cur.execute("select * from user")
-    infoCnt = infoCnt + 1
-    if (root == 0):
-        root = infoCnt
     if (sonTag != -1):
         if (sonTag == 1):
             cur.execute("update user set leftson = {} where idNo = {}".format(infoCnt, tmpId))
@@ -157,7 +161,6 @@ def databaseInsert(informationDict):
         tel,
         fax,
         email,
-        #academic,
         url,
         firstVisit,
         visit0,
@@ -228,7 +231,7 @@ def databaseFind(feature):
     find the nearest point to the feature on the K-dimensional Tree
     return:[{feature}, {}, {}, {}, {}]
     '''
-    conn = pymysql.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
+    conn = MySQLdb.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
     cur = conn.cursor()
     global root
     pt = root
@@ -283,7 +286,6 @@ def databaseFind(feature):
                         ans[j] = i
                         dist[j] = tmpDist
                         break
-        tmpDist = ((feature[tmpInfo[3]] - tmpDimFeature) ** 2)** 0.5
         if (tmpInfo[1] != 0 and not(tmpInfo[1] in que)):
             cur.execute("select * from feature" + str(tmpInfo[1]))
             tmpFeature = []
@@ -291,7 +293,7 @@ def databaseFind(feature):
                 tmp = cur.fetchone()
                 tmpFeature.append(tmp[1])
             tmpFeature = numpy.array(tmpFeature)
-            if (len(dist) != 0) and ((featureDist(feature, tmpFeature) < dist[len(dist) - 1]) or (tmpDist < dist[len(dist) - 1])):
+            if (len(dist) != 0) and (featureDist(feature, tmpFeature) < dist[len(dist) - 1]):
                 que.append(tmpInfo[1])
         if (tmpInfo[2] != 0 and not(tmpInfo[2] in que)):
             cur.execute("select * from feature" + str(tmpInfo[2]))
@@ -300,8 +302,11 @@ def databaseFind(feature):
                 tmp = cur.fetchone()
                 tmpFeature.append(tmp[1])
             tmpFeature = numpy.array(tmpFeature)
-            if (len(dist) != 0) and ((featureDist(feature, tmpFeature) < dist[len(dist) - 1]) or (tmpDist < dist[len(dist) - 1])):
+            if (len(dist) != 0) and (featureDist(feature, tmpFeature) < dist[len(dist) - 1]):
                 que.append(tmpInfo[2])
+    print(que)
+    print(ans)
+    print(dist)
     return ans
     conn.commit()
     cur.close()
@@ -314,9 +319,12 @@ def databaseRenew(informationDict):
     informationDict{(the renewed information needs to be wrote in the database), 'feature':[ Normalized Eigenvalue ]}
     return:None
     '''
-    conn = pymysql.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
+    conn = MySQLdb.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
     cur = conn.cursor()
     commonList = databaseFind(informationDict['feature'])
+    if len(commonList) == 0:
+        databaseInsert(informationDict)
+        return
     tmpId = 0
     tmpTrans = 0.55
     for i in commonList:
@@ -327,14 +335,19 @@ def databaseRenew(informationDict):
             tmpFeature.append(tmp[1])
         tmpFeature = numpy.array(tmpFeature)
         trans = featureTransvection(informationDict['feature'], tmpFeature)
-        if trans < tmpTrans:
+        if trans > tmpTrans:
             tmpTrans = trans
             tmpId = i
     if tmpId == 0:
         return
-    cur.execute("update user set photoAdd = {} where idNo = {}".format(informationDict['photoAdd'], tmpId))
+    cur.execute("update user set img_path = {} where idNo = {}".format(informationDict['img_path'], tmpId))
     cur.execute("update user set name = {} where idNo = {}".format(informationDict['name'], tmpId))
-    cur.execute("update user set pageAdd = {} where idNo = {}".format(informationDict['pageAdd'], tmpId))
+    cur.execute("update user set address = {} where idNo = {}".format(informationDict['address'], tmpId))
+    cur.execute("update user set tel = {} where idNo = {}".format(informationDict['tel'], tmpId))
+    cur.execute("update user set fax = {} where idNo = {}".format(informationDict['fax'], tmpId))
+    cur.execute("update user set email = {} where idNo = {}".format(informationDict['email'], tmpId))
+    cur.execute("update user set academic = {} where idNo = {}".format(informationDict['academic'], tmpId))
+    cur.execute("update user set url = {} where idNo = {}".format(informationDict['url'], tmpId))
     conn.commit()
     cur.close()
     conn.close()
@@ -347,7 +360,7 @@ def databaseAppend(tempList):
     list{'time':20170101170506, 'feature':[ Normalized Eigenvalue ]}
     return:None
     '''
-    conn = pymysql.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
+    conn = MySQLdb.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
     cur = conn.cursor()
     conn.commit()
     cur.close()
@@ -361,7 +374,7 @@ def databaseSearch(feature):
     return:{'name':<str>, 'famiPeople':[{'name':<str>, 'photoAdd':<str>},{},{}], 'recentVisit':[int,int,int], 'firstVisit':int, 'pageAdd':<str>, 'photoAdd':<str>}
     if there's nothing about the feature, then try a null dict.
     '''
-    conn = pymysql.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
+    conn = MySQLdb.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
     cur = conn.cursor()
     informationDict = dict()
     informationDict = fillInfo(informationDict)
@@ -416,18 +429,6 @@ def databaseSearch(feature):
     conn.close()
     pass
 
-def databaseRequest():
-    '''
-    provide a request for the crawler to find new information.
-    return:informationDict{(the information needs to be renewed is null), 'feature':[ Normalized Eigenvalue ]}
-    '''
-    conn = pymysql.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
-    cur = conn.cursor()
-    conn.commit()
-    cur.close()
-    conn.close()
-    pass
-
 def DatabaseBase():
     caffe.set_mode_gpu()
     rootFile = '/home/luka/PycharmProjects/cvlab/protobuf1/'
@@ -443,38 +444,24 @@ def DatabaseBase():
     caffemodel = [detectionModel, recognitionModel]
     tmpList = spider.Spider(caffemodel)
 
-
-    for i in tmpList:
-        if ('academic' in i.keys()) and (type(i['academic']) is list):
-            tmpStr = ''
-            for j in i['academic']:
-                tmpStr += j + ';'
-            i['academic'] = tmpStr
-        # print(i)
-        if 'feature' in i.keys():
-            databaseInsert(i)
-    conn = pymysql.connect(host='127.0.0.1', port=3306, user='root', passwd='666666', db='DemoSystemDatabase',
-                           charset='utf8')
+    conn = MySQLdb.connect(host='127.0.0.1', port=3306, user='root', passwd='666666', db='DemoSystemDatabase', charset='utf8')
     cur = conn.cursor()
+    databaseInit()
     for i in tmpList:
         if ('academic' in i.keys()) and (type(i['academic']) is list):
             tmpStr = ''
             for j in i['academic']:
-                tmpStr += j + ';'
+                tmpStr += j + '$'
             i['academic'] = tmpStr
-        # print(i)
         if 'feature' in i.keys():
-            databaseInsert(i)
+            databaseRenew(i)
     conn.commit()
     cur.close()
     conn.close()
 
-
-
-
 if __name__=="__main__":
     DatabaseBase()
-    '''conn = pymysql.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
+    '''conn = MySQLdb.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
     cur = conn.cursor()'''
     '''information = {'name': "['张志军']", 'address': ['???'], 'email': "['电子邮箱：??']",
                    'feature': [6.73086708e-03, -2.94301827e-02, 1.45628629e-02,
@@ -656,9 +643,9 @@ if __name__=="__main__":
     print(featureTransvection(tmpFea,information['feature']))
     print(featureDist(tmpFea, information['feature']))
     info = databaseSearch(information['feature'])
-    print(info)'''
-    #databaseInit()
-    '''tmpList = spider.Spider()
+    print(info)
+    databaseInit()
+    tmpList = spider.Spider()
     for i in tmpList:
         if ('academic' in i.keys()) and (type(i['academic']) is list):
             tmpStr = ''
