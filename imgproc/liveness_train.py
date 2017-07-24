@@ -1,17 +1,15 @@
 import cv2
-from .svm_train import *
 import os,pickle,caffe
-from .face_detection import FaceDetect
-from .LBP_pattern import *
 import caffe
 import os
 import pickle
 
 import cv2
 
-from .LBP_pattern import *
-from .face_detection import FaceDetect
-from .svm_train import *
+import LBP_pattern
+from LBP_pattern import *
+from face_detection import FaceDetect
+from svm_train import *
 
 
 def livenessTrain(filepaths,labels,caffemodel):
@@ -94,6 +92,10 @@ def featureGenerate(caffemodel,picture):
     picture = cv2.cvtColor(picture,cv2.COLOR_BGR2RGB)
     min_size = 50
     [bbox, Ip] = FaceDetect(picture, min_size, caffemodel)
+    S = max(bbox[2], bbox[3]) * 1.3
+    bbox[0] = bbox[0] + (bbox[2] - S) / 2
+    bbox[1] = bbox[1] + (bbox[3] - S) / 2
+    bbox[3] = bbox[2] = S
     a = int(bbox[0])
     b = int(bbox[1])
     c = int(bbox[2])
@@ -101,6 +103,8 @@ def featureGenerate(caffemodel,picture):
     if bbox[2] < 100 or bbox[3] < 100:
         return []
     faceImg = Ip[b:(b + d), a: (a + c)]
+    cv2.imshow('tst',faceImg)
+    cv2.waitKey(0)
     faceImg = cv2.resize(faceImg,(144,120),interpolation=cv2.INTER_CUBIC)[:,:,0]
     facePattern = LBP(faceImg)
     lbp = []
@@ -115,10 +119,12 @@ def featureGenerate(caffemodel,picture):
 
 
 if __name__ == '__main__':
-    path1 = 'true models/'
-    path2 = 'videoFalse models/'
-    path3 = 'photoFalse models/'
-    path4 = 'screenFalse models/'
+    caffe.set_mode_gpu()
+    picRoot = '/home/luka/PycharmProjects/cvlab/svmTrain/'
+    path1 = picRoot + 'true_origin/'
+    path2 = picRoot + 'false1_origin/'
+    path3 = picRoot + 'false2_origin/'
+    path4 = picRoot + 'false3_origin/'
     paths = [path1,path2,path3,path4]
     labels = [-1,1,1,1]
     root = "/home/luka/PycharmProjects/cvlab/"

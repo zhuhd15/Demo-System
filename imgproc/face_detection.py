@@ -1,5 +1,5 @@
 import caffe,cv2
-import numpy,math
+import numpy,math,time
 from skimage import measure
 
 
@@ -212,20 +212,24 @@ def face_Extract(caffemodel,bbox1,bbox2,image1,image2):
     H=128
     W=128
     feature1=feature_Extract(caffemodel,bbox1,image1,W,H).copy()
+    print(feature1/numpy.sqrt(numpy.dot(feature1,feature1.T)))
     feature2=feature_Extract(caffemodel,bbox2,image2,W,H)
+    print(feature2/numpy.sqrt(numpy.dot(feature2,feature2.T)))
     score=numpy.dot(feature1,feature2.T)/numpy.sqrt(numpy.dot(feature1,feature1.T)*numpy.dot(feature2,feature2.T))-0.15
     score=round(100*max(min(score*2,1),0))
     return score
 
 
 if __name__=='__main__':
+    caffe.set_mode_gpu()
+    start = time.clock()
     root = "/home/luka/PycharmProjects/cvlab/"
     deploy = root + "protobuf/deploy_face_w.prototxt"
     caffe_model = root + "protobuf/w_iter_100000.caffemodel"
     net = caffe.Net(deploy,caffe_model,caffe.TEST)
     min_size = 50
 
-    img1 = root + "img/right.jpg"
+    img1 = root + "img/tst.jpg"
     im1 = cv2.imread(img1, cv2.IMREAD_COLOR)
     [bbox1,Ip1]=FaceDetect(im1, min_size, net)
 
@@ -240,7 +244,7 @@ if __name__=='__main__':
     #cv2.rectangle(Ip1,(a,b),(c,d),(0,255,0),5)
     #cv2.imwrite('messigray.png',Ip1)
 
-    ''' 
+
     deploy = root + "protobuf/deploy_p.prototxt"
     caffe_model = root + "protobuf/pm_iter_78000.caffemodel"
     net = caffe.Net(deploy,caffe_model,caffe.TEST)
@@ -250,7 +254,7 @@ if __name__=='__main__':
     caffe_model = root + "protobuf/_iter_70000.caffemodel"
     #
     net = caffe.Net(deploy, caffe_model, caffe.TEST)
-    similarity = face_Extract2(net, bbox1, bbox2, Ip1, Ip2)
-
+    similarity = face_Extract2(net, bbox1, bbox2, Ip1, Ip2)'''
+    print(time.clock()-start)
     print(similarity)
 

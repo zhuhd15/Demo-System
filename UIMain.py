@@ -1,20 +1,30 @@
 #five face to find the different area
 from GUI.uiMainwindow import Ui_MainWindow
 from GUI.uiwindow2 import Ui_Dialog
-import caffe, sys,threading
+import caffe, sys,multiprocessing
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
+from PyQt5.QtWebKitWidgets import *
 from selenium import webdriver
 
 from database.Database import *
 from imgproc.face_detection import *
-from imgproc.liveness_detection import *
+#from imgproc.liveness_detection import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
-import sys, os,time,cv2
+import sys, os,time,cv2,pickle,numpy
+import spider
 
+'''
+This pattern in for further test
+'''
+
+
+'''
+test end
+'''
 class Camera(QMainWindow, Ui_MainWindow):
     def __init__(self, cameraNum,detectionModel,recognitionModel,svmModels,parent=None):
         super(Camera, self).__init__(parent)
@@ -25,16 +35,18 @@ class Camera(QMainWindow, Ui_MainWindow):
         self.recog = False
         self.tempList = {'valid': False, 'data': []}
         self.svmModels = svmModels
+        self.webimage = Screenshot()
+        self.homePage = ''
 
         self.setupUi(self)
         self.timer = QTimer()                                                           #show on screen
         self.timerRec = QTimer()                                                        #show on label
         self.timerSet = QTimer()                                                         #input the data
-        self.backColor = QPixmap(self.label.size()).fill(Qt.white)
-        self.label.autoFillBackground()
+        self.backColor = QPixmap(self.Qtvideo.size()).fill(Qt.white)
+        self.Qtvideo.autoFillBackground()
         self.timer.setInterval(10)
         self.timerRec.setInterval(1000)
-        self.timerSet.setInterval(15000)                                              #milisecond
+        self.timerSet.setInterval(150000)                                              #milisecond
         self.timer.timeout.connect(self.showCamera)
         self.timerRec.timeout.connect(self.preRecognize)
         self.timerSet.timeout.connect(self.dataAppend)
@@ -47,12 +59,16 @@ class Camera(QMainWindow, Ui_MainWindow):
         self.Message = dialogWindow()
         self.pushButton_3.clicked.connect(self.Message.handle_click)
         self.Message.pushButton_2.clicked.connect(self.Confirm)
+        #caffemodel = [[detectionModel, recognitionModel]]
+        #self.Spider=multiprocessing.Process(target=spider.Spider)
+        #self.Spider.start()
 
     #two clock initial
     def startRecognize(self,pressed):
         if pressed:
             self.timerRec.start()
             self.timerSet.start()
+        #    self.Spider.start()
         else:
             self.timerRec.stop()
             self.timerSet.stop()
@@ -66,7 +82,7 @@ class Camera(QMainWindow, Ui_MainWindow):
         pass
 
     def dataAppend(self):
-        databaseAppend(self.tempList)
+        #databaseAppend(self.tempList)
         self.tempList['valid'] = False
         self.tempList['data'] = []
         pass
@@ -82,7 +98,7 @@ class Camera(QMainWindow, Ui_MainWindow):
         self.img2=self.img;
         cv2.cvtColor(self.img2, cv2.COLOR_BGR2RGB, self.img2)
         self.image = QImage(self.img2.data, width, height, bytesPerLine, QImage.Format_RGB888)
-        self.label.setPixmap(QPixmap.fromImage(self.image))
+        self.Qtvideo.setPixmap(QPixmap.fromImage(self.image))
 
     def preRecognize(self):
         pic1 = self.img.copy()
@@ -110,7 +126,23 @@ class Camera(QMainWindow, Ui_MainWindow):
         feature = numpy.divide(feature,numpy.sqrt(numpy.dot(feature,feature.T)))
         timelabel = time.strftime("%Y%m%d%H%M%S", time.localtime())
         timelabel = int(timelabel)
+        feaMap = {'time': timelabel, 'feature': feature}
+        if self.tempList['valid']==False:
+            self.tempList['valid']=True
+        startVariable = max(0,len(self.tempList['data'])-100)
+        for items in range(startVariable,len(self.tempList['data'])):   #further recover from the front
+            info = self.tempList['data'][items]
+            #temp_value = numpy.dot(feature,info['feature'].T)
+            if abs(numpy.dot(feature,info['feature'].T)-0.15>0.4):
+                if abs(timelabel-info['time']<10):
+                    self.tempList['data'][items] = feaMap
+                    return None
+        self.tempList['data'].append(feaMap)
+        #information={'name':'Zhu Haidong','recentVisit':[1,2,3],'firstVisit':5,'pageAddress':"http://mails.tsinghua.edu.cn/"}
+        #information['photo']="/home/luka/PycharmProjects/cvlab/img/2.jpg"
+
         information = databaseSearch(feature)
+
         if information=={}:
             return None
         if 'name' in information:
@@ -123,34 +155,33 @@ class Camera(QMainWindow, Ui_MainWindow):
             self.QtVisit3.setText(str(self.recent[2]))
         if 'firstVisit' in information:
             self.QtFirstVisit.setText(str(information['firstVisit']))
-        if 'pageAddress' in information:
-            self.homePage = information['pageAddress']
-            if self.homePage!= '':
-                screenShot(self.homePage)
-            self.QtHomepage.setPixmap(QPixmap('shot.png'))
+        if 'url' in information:
+            if 1 or self.homePage != information['url']:
+                self.homePage = information['url']
+                if self.homePage!= '':
+                    self.webimage.capture(self.homePage)
+            #    screenShot(self.homePage)
+            #self.webimage.webimg = self.webimage.webimg.scaled(self.QtHomepage.size())
+                #self.image = QImage(self.img2.data, self.QtHomepage, bytesPerLine, QImage.Format_RGB888)
+                #self.Qtvideo.setPixmap(QPixmap.fromImage(self.image))
+                tempImg = QPixmap.fromImage(self.webimage.webimg).scaled(self.QtHomepage.size())
+                #tempImg = QPixmap.fromImage(self.webimage.webimg).scaled(self.QtHomepage.size())
+                self.QtHomepage.setPixmap(tempImg)
+            #self.QtHomepage.setPixmap(QPixmap('shot.png'))
         if 'famiPeople' in information:
             self.relationship = information['famiPeople']
             self.QtName1.setText(self.relationship[0]['name'])
             self.QtName2.setText(self.relationship[1]['name'])
             self.QtPhoto1.setPixmap(QPixmap(self.relationship[0]['photoAdd']))
             self.QtPhoto2.setPixmap(QPixmap(self.relationship[1]['photoAdd']))
-        if 'photo' in information:
-            self.photo = information['photo']                #recover
-            self.QtPhoto.setPixmap(QPixmap(self.photo))
-        if self.tempList['valid']==False:
-            self.tempList['valid']=True
-        startVariable = max(0,len(self.tempList['data'])-100)
-        for items in range(startVariable,len(self.tempList['data'])):   #further recover from the front
-            info = self.tempList['data']
-            if abs(feature*info['feature']-0.15<0.25):
-                if abs(timelabel-info['time']<10):
-                    return None
+        if 'img_path' in information:
+            self.photo = information['img_path']                #recover
+            tempPix = QPixmap(self.photo).scaled(self.QtPhoto.size())
+            self.QtPhoto.setPixmap(tempPix)
+        
         pass
-        #truthness = livenessDetectNoCaffe(self.imgCam,self.bboxCam,self.svmModels)
-        #if ~truthness:
-        #    return None
-        feaMap = {'time':timelabel,'feature':feature}
-        self.tempList['data'].append(feaMap)
+
+
         print(self.tempList['valid'],len(self.tempList['data']))
         pass
 
@@ -160,6 +191,7 @@ class Camera(QMainWindow, Ui_MainWindow):
         self.text3 = self.Message.lineEdit_7.text()
         self.text4 = self.Message.lineEdit_8.text()
         self.text5 = self.Message.lineEdit_9.text()
+
 
 
 class dialogWindow(Ui_Dialog,QDialog):
@@ -174,33 +206,87 @@ class dialogWindow(Ui_Dialog,QDialog):
             self.show()
 
 
-def main():
-    rootFile = '/home/luka/Github/caffe models/'
-    detectionPrototxt = rootFile + 'face detection/deploy_face_w.prototxt'
-    detectionCaffeModel = rootFile + 'face detection/w_iter_100000.caffemodel'
-    detectionModel = caffe.Net(detectionPrototxt, detectionCaffeModel, caffe.TEST)
-
-    RecognitionPrototxt = rootFile + 'face recognition/newer/recognition.prototxt'
-    RecognitionCaffeModel = rootFile + 'face recognition/newer/_iter_70000.caffemodel'
-    recognitionModel = caffe.Net(RecognitionPrototxt, RecognitionCaffeModel, caffe.TEST)
-    # GUI init
-
-    svmAddress = 'home/luka/Github/Demo-System/database/svm.data'
-    with open(svmAddress,'rb') as svmFile:
-        svmModels = pickle.load(svmFile)
-    app = QApplication(sys.argv)
-    form = Camera(0,detectionModel,recognitionModel,svmModels)
-    form.show()
-    app.exec_()
-    pass
 
 def screenShot(url):
     browser = webdriver.PhantomJS()
     browser.set_window_size(1055, 800)
     browser.get(url)
+    std = browser.get_screenshot_as_png()
     browser.save_screenshot("shot.png")
     browser.quit()
 
+class Screenshot(QWebView):
+    def __init__(self):
+        self.app = QApplication(sys.argv)
+        QWebView.__init__(self)
+        self._loaded = False
+        self.loadFinished.connect(self._loadFinished)
+
+    def capture(self, url):
+        self.load(QUrl(url))
+        self.wait_load()
+        frame = self.page().mainFrame()
+        self.page().setViewportSize(QSize(1600, 900))
+        self.webimg = QImage(self.page().viewportSize(), QImage.Format_ARGB32)
+        painter = QPainter(self.webimg)
+        frame.render(painter)
+        painter.end()
+
+    def wait_load(self, delay=0):
+        while not self._loaded:
+            self.app.processEvents()
+            time.sleep(delay)
+        self._loaded = False
+
+    def _loadFinished(self, result):
+        self._loaded = True
+
+
+def main():
+    caffe.set_mode_gpu()
+    rootFile = '/home/luka/PycharmProjects/cvlab/protobuf/'
+    detectionPrototxt = rootFile + 'deploy_face_w.prototxt'
+    detectionCaffeModel = rootFile + 'w_iter_100000.caffemodel'
+    detectionModel = caffe.Net(detectionPrototxt, detectionCaffeModel, caffe.TEST)
+
+
+
+    RecognitionPrototxt = rootFile + 'recognition.prototxt'
+    RecognitionCaffeModel = rootFile + '_iter_70000.caffemodel'
+    recognitionModel = caffe.Net(RecognitionPrototxt, RecognitionCaffeModel, caffe.TEST)
+
+
+    rootFile1 = '/home/luka/PycharmProjects/cvlab/protobuf1/'
+    detectionPrototxt1 = rootFile1 + 'deploy_face_w.prototxt'
+    detectionCaffeModel1 = rootFile1 + 'w_iter_100000.caffemodel'
+    detectionModel1 = caffe.Net(detectionPrototxt1, detectionCaffeModel1, caffe.TEST)
+
+    RecognitionPrototxt1 = rootFile1 + 'recognition.prototxt'
+    RecognitionCaffeModel1 = rootFile1 + '_iter_70000.caffemodel'
+    recognitionModel1 = caffe.Net(RecognitionPrototxt1, RecognitionCaffeModel1, caffe.TEST)
+    # GUI init
+
+    svmAddress = '/home/luka/PycharmProjects/Github/Demo-System/database/svm.data'
+    #with open(svmAddress,'rb') as svmFile:
+    #    svmModels = pickle.load(svmFile)
+    #caffemodel = [[detectionModel1, recognitionModel1]]
+
+#    t1=threading.Thread(target=spider.Spider,args=caffemodel)
+ #   t1.start()
+
+
+    svmModels = []
+    app = QApplication(sys.argv)
+    form = Camera(0,detectionModel,recognitionModel,svmModels)
+    #ts = multiprocessing.Process(target=spider.Spider)
+    #ts.start()
+    form.show()
+    app.exec_()
+    pass
 
 if __name__ == '__main__':
+    #thread1=multiprocessing.Process(target=main)
+    thread2=multiprocessing.Process(target=DatabaseBase)
+    #thread1.start()
+    thread2.start()
     main()
