@@ -33,9 +33,10 @@ def get_Html(url):
     html = page.read()
     return html
 
-def get_info(url,info):
+def get_info(url, info):
     html = get_Html(url).decode('utf-8', 'ignore')
-    html = html.replace('&nbsp;','')
+    #print(html)
+    html = html.replace('&nbsp;', '')
     html = html.replace('&ldquo;', '"')
     html = html.replace('&rdquo;', '"')
     html = html.replace('&ndash;', '-')
@@ -43,49 +44,86 @@ def get_info(url,info):
     html = html.replace('&bull;', '')
     html = html.replace('&quot;', '')
     html = html.replace('<p><br/></p>', '')
-    html = html.replace('<p></p>','')
+    html = html.replace('<p></p>', '')
+    #print(html)
     form_name = re.compile('con开始处-->\s?.+?\s?.+?\s?\s?<p>(.+?)<')
     name = form_name.findall(html)
     name = str(name).replace('姓名：', '')
+    name = str(name).replace(',', ' ')
     name = str(name).replace('，', ' ')
+    name = str(name).replace('[', '')
+    name = str(name).replace(']', '')
+    name = str(name).replace('\'', '')
+    #print(name)
     form_addr = re.compile('\s?<.{1,3}>\s?([^<>;]+?清华.+?100084\)?)\s?<')
     addr = form_addr.findall(html)
-    form_tel = re.compile('(电话.+?)\s?[<，]')
+    addr = str(addr).replace('[', '')
+    addr = str(addr).replace(']', '')
+    addr = str(addr).replace('\'', '')
+    addr = str(addr).replace('</p><p>', ' ')
+    # print(addr)
+    # form_tel = re.compile('[1084]?\s?</p>\s?<p>\s?(电话.+?)\s?<')
+    form_tel = re.compile('(电话[^/<>。]+?[0-9].+?)\s?[<，]')
     tel = form_tel.findall(html)
     tel = str(tel).replace(' ', '')
-    #print(tel)
-    form_fax = re.compile('(传真.+?)\s?<')
+    tel = str(tel).replace('[', '')
+    tel = str(tel).replace(']', '')
+    tel = str(tel).replace('\'', '')
+    # print(tel)
+    form_fax = re.compile('(传真[^至]+?)\s?<')
     fax = form_fax.findall(html)
     fax = str(fax).replace(' ', '')
-    #print(fax)
-    form_email = re.compile('(电?子?邮.+?tsinghua.+?)\s?</')
-    email = form_email.findall(html)
+    fax = str(fax).replace('[', '')
+    fax = str(fax).replace(']', '')
+    fax = str(fax).replace('\'', '')
+    # print(fax)
+    form_email0 = re.compile('(电?子?邮[^/]+?tsinghua[^<>]+?)\s?</')          #中文
+    form_email1 = re.compile('([eE]?-?mail.{2,50}tsinghua[^<>]+?)\s?</')        #english version
+    email0 = form_email0.findall(html)
+    email1 = form_email1.findall(html)
+    email = email0 + email1
+    if name=='':
+        email = ''
+    else:
+        if len(email)>1:
+            for x in range(0,len(email)-1):
+                if 'mailto' in str(email[x]):
+                    email = email[x]
+        email = str(email).replace(' AT ', '@')
+        email = str(email).replace('(at)', '@')
+        email = str(email).replace('[at]', '@')
+        email = str(email).replace('[dot]', '.')
+        email = str(email).replace(' ', '')
+        if 'mailto' in str(email):
+            form_email2 = re.compile('mailto:(.+?@.+?)"')
+            email2 = form_email2.findall(str(email))
+            email = email2[0]  # 超鏈接email
+        else:
+            form_email3 = re.compile('([a-zA-Z0-9\-_*]+?@.+)\']')
+            email3 = form_email3.findall(str(email))
+            email = email3
+        email = str(email).replace('[', '')
+        email = str(email).replace(']', '')
+        email = str(email).replace('\'', '')
     #print(email)
-    if 'href' in str(email):
-        form_email2 = re.compile('"mailto:(.+?@.+?)"')
-        email2 = form_email2.findall(str(email))
-        email[0]= '电子邮箱：' + email2[0]          #超鏈接email....
-    email = str(email).replace('AT', '@')
-    email = str(email).replace('(at)', '@')
-    email = str(email).replace('[at]', '@')
-    email = str(email).replace(' ', '')
-    #print(email)
-    #form_academic1 = re.compile('学术成果.+?(\[1][^<>[]+)',re.DOTALL)
+    form_page = re.compile('主页.+?\s?.+?\s?.+?href="(.+?)"')
+    page = form_page.findall(html)
+    page = str(page).replace('[', '')
+    page = str(page).replace(']', '')
+    # print(page)
     form_academic1 = re.compile('学术成果.+?(\[?1[\.\]、][^<>[]+)', re.DOTALL)
     academic1 = form_academic1.findall(html)
-    #print(academic1)
+    # print(academic1)
     form_academic2 = re.compile('学术成果.+?(\[?2[\.\]、][^<>[]+)', re.DOTALL)
     academic2 = form_academic2.findall(html)
-    #print(academic2)
+    # print(academic2)
     form_academic3 = re.compile('学术成果.+?(\[?3[\.\]、][^<>[]+)', re.DOTALL)
     academic3 = form_academic3.findall(html)
-    #print(academic3)
-    academic = academic1+academic2+academic3
-    #print(academic)
-    info.update(name = name,address = addr,tel = tel,fax = fax,email = email,academic = academic)
+    # print(academic3)
+    academic = academic1 + academic2 + academic3
+    # print(academic)
+    info.update(name=name, address=addr, tel=tel, fax=fax, email=email, page=page, academic=academic)
 
-    #if info['name']!='[]':
-    #    print(info)
     return info
 
 def find_imglist(url):
@@ -103,12 +141,20 @@ def store_pic(img_url, info):
     new_path = os.path.join(path, title)
     if not os.path.isdir(new_path):
         os.makedirs(new_path)
-    pic_path = os.path.join(new_path, currentTime() + '.jpg')
-    # urllib.request.urlretrieve(img_url, pic_path) #store in the new folder
+    if 'png' in img_url or 'PNG' in img_url:
+        pic_path = os.path.join(new_path, currentTime() + '.png')
+    elif 'jpg' in img_url or 'JPG' in img_url:
+        pic_path = os.path.join(new_path, currentTime() + '.jpg')
+    elif 'bmp' in img_url or 'BMP' in img_url:
+        pic_path = os.path.join(new_path, currentTime() + '.bmp')    
+    try:
+        urllib.request.urlretrieve(img_url, pic_path)  #store in the new folder
+    except:
+        pass            #404 Not Found
     info.update(img_path=pic_path)
 
 
-def get_img(start_url, url, key, info,caffemodel):
+def get_img_by_img(start_url, url, info,caffemodel):
     img_list = find_imglist(url)
     flag = 0
     for img_url in img_list:
@@ -154,7 +200,7 @@ def get_img(start_url, url, key, info,caffemodel):
             for bbox in bboxset:
                 feature = feature_Extract_spider(recognitionModel, bbox, extend, 128, 128)
                 feature = numpy.divide(feature, numpy.sqrt(numpy.dot(feature, feature.T)))
-            #if W==key[0] and H==key[1]:
+            
             td = numpy.array(info['feature']).T
             time.sleep(0.1)
             print(abs(numpy.dot(td, feature)))
@@ -195,7 +241,7 @@ def search_for_new_info(start_url,key,info,caffemodel):
         try:
             urlop = urllib.request.urlopen(url, timeout=2)
             data = urlop.read().decode('utf-8')
-            info, flag= get_img(start_url, url, key, info,caffemodel)
+            info, flag= get_img_by_img(start_url, url, key, info,caffemodel)
             if flag:
                 return info
         except :
@@ -227,8 +273,8 @@ def SpiderRenewer(info,caffemodel):
     caffemodel = [detectionModel, recognitionModel]
 
     initial_url = 'http://www.ee.tsinghua.edu.cn'  # ee main page
-    key = info['feature']
-    new_info = search_for_new_info(initial_url, key, info,caffemodel)
+    #key = info['feature']
+    new_info = search_for_new_info(initial_url, info, caffemodel)
     return new_info
 
 if __name__ == '__main__':
