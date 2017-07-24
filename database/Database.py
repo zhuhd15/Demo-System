@@ -73,7 +73,7 @@ def databaseInit():
         leftson smallint,
         rightson smallint,
         depth smallint,
-        img_path varchar(2000) not null,
+        img_path varchar(2000),
         name varchar(2000),
         address varchar(2000),
         tel varchar(2000),
@@ -81,7 +81,7 @@ def databaseInit():
         email varchar(2000),
         academic varchar(2000),
         url varchar(2000),
-        firstVisit bigint not null,
+        firstVisit bigint,
         visit0 bigint,
         visit1 bigint,
         visit2 bigint,
@@ -307,9 +307,6 @@ def databaseFind(feature):
             tmpFeature = numpy.array(tmpFeature)
             if (len(dist) != 0) and (featureDist(feature, tmpFeature) < dist[len(dist) - 1]):
                 que.append(tmpInfo[2])
-    print(que)
-    print(ans)
-    print(dist)
     return ans
     conn.commit()
     cur.close()
@@ -327,7 +324,7 @@ def databaseRenew(informationDict):
     informationDict = fillInfo(informationDict)
     commonList = databaseFind(informationDict['feature'])
     if len(commonList) == 0:
-        information['firstVisit'] = information['visit0']
+        informationDict['firstVisit'] = informationDict['visit0']
         databaseInsert(informationDict)
         return
     tmpId = 0
@@ -361,14 +358,14 @@ def databaseRenew(informationDict):
         cur.execute("update user set academic = {} where idNo = {}".format(informationDict['academic'], tmpId))
     if informationDict['url'] != '':
         cur.execute("update user set url = {} where idNo = {}".format(informationDict['url'], tmpId))
-    if information['visit0'] != 0:
-        cur.execute("select * from user where idNo = {}",tmpId)
-        tmpInfo = cur.fetchonr()
+    if informationDict['visit0'] != 0:
+        cur.execute("select * from user where idNo = {}".format(tmpId))
+        tmpInfo = cur.fetchone()
         cur.execute("update user set visit2 = {} where idNo = {}".format(tmpInfo[14], tmpId))
         cur.execute("update user set visit1 = {} where idNo = {}".format(tmpInfo[13], tmpId))
-        cur.execute("update user set visit0 = {} where idNo = {}".format(information['visit0'], tmpId))
+        cur.execute("update user set visit0 = {} where idNo = {}".format(informationDict['visit0'], tmpId))
         if tmpInfo[12] == 0:
-            cur.execute("update user set firstVisit = {} where idNo = {}".format(information['visit0'], tmpId))
+            cur.execute("update user set firstVisit = {} where idNo = {}".format(informationDict['visit0'], tmpId))
     conn.commit()
     cur.close()
     conn.close()
