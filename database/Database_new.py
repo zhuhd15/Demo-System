@@ -343,21 +343,21 @@ def databaseRenew(informationDict):
     if tmpId == 0:
         return
     if informationDict['img_path'] != '':
-        cur.execute("update user set img_path = '{}' where idNo = {}".format(informationDict['img_path'], tmpId))
+        cur.execute("update user set img_path = {} where idNo = {}".format(informationDict['img_path'], tmpId))
     if informationDict['name'] != '':
-        cur.execute("update user set name = '{}' where idNo = {}".format(informationDict['name'], tmpId))
+        cur.execute("update user set name = {} where idNo = {}".format(informationDict['name'], tmpId))
     if informationDict['address'] != '':
-        cur.execute("update user set address = '{}' where idNo = {}".format(informationDict['address'], tmpId))
+        cur.execute("update user set address = {} where idNo = {}".format(informationDict['address'], tmpId))
     if informationDict['tel'] != '':
-        cur.execute("update user set tel = '{}' where idNo = {}".format(informationDict['tel'], tmpId))
+        cur.execute("update user set tel = {} where idNo = {}".format(informationDict['tel'], tmpId))
     if informationDict['fax'] != '':
-        cur.execute("update user set fax = '{}' where idNo = {}".format(informationDict['fax'], tmpId))
+        cur.execute("update user set fax = {} where idNo = {}".format(informationDict['fax'], tmpId))
     if informationDict['email'] != '':
-        cur.execute("update user set email = '{}' where idNo = {}".format(informationDict['email'], tmpId))
+        cur.execute("update user set email = {} where idNo = {}".format(informationDict['email'], tmpId))
     if informationDict['academic'] != '':
-        cur.execute("update user set academic = '{}' where idNo = {}".format(informationDict['academic'], tmpId))
+        cur.execute("update user set academic = {} where idNo = {}".format(informationDict['academic'], tmpId))
     if informationDict['url'] != '':
-        cur.execute("update user set url = '{}' where idNo = {}".format(informationDict['url'], tmpId))
+        cur.execute("update user set url = {} where idNo = {}".format(informationDict['url'], tmpId))
     if informationDict['visit0'] != 0:
         cur.execute("select * from user where idNo = {}".format(tmpId))
         tmpInfo = cur.fetchone()
@@ -380,16 +380,15 @@ def databaseAppend(tempList):
     '''
     conn = pymysql.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
     cur = conn.cursor()
-    if tempList['valid']:
-        for i in tempList['data']:
-            informationDict = dict()
-            informationDict = fillInfo(informationDict)
-            informationDict['feature'] = i['feature']
-            informationDict['visit0'] = i['time']
-            databaseRenew(informationDict)
-        conn.commit()
-        cur.close()
-        conn.close()
+    for i in tempList:
+        informationDict = dict()
+        informationDict = fillInfo(informationDict)
+        informationDict['feature'] = i['feature']
+        informationDict['visit0'] = i['time']
+        databaseRenew(informationDict)
+    conn.commit()
+    cur.close()
+    conn.close()
     pass
 
 def databaseSearch(feature):

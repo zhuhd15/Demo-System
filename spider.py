@@ -33,7 +33,7 @@ def get_Html(url):
 
 def get_info(url, info):
     html = get_Html(url).decode('utf-8', 'ignore')
-    # print(html)
+    #print(html)
     html = html.replace('&nbsp;', '')
     html = html.replace('&ldquo;', '"')
     html = html.replace('&rdquo;', '"')
@@ -43,37 +43,67 @@ def get_info(url, info):
     html = html.replace('&quot;', '')
     html = html.replace('<p><br/></p>', '')
     html = html.replace('<p></p>', '')
-    # print(html)
+    #print(html)
     form_name = re.compile('con开始处-->\s?.+?\s?.+?\s?\s?<p>(.+?)<')
     name = form_name.findall(html)
     name = str(name).replace('姓名：', '')
     name = str(name).replace(',', ' ')
     name = str(name).replace('，', ' ')
-    # print(name)
+    name = str(name).replace('[', '')
+    name = str(name).replace(']', '')
+    name = str(name).replace('\'', '')
+    #print(name)
     form_addr = re.compile('\s?<.{1,3}>\s?([^<>;]+?清华.+?100084\)?)\s?<')
     addr = form_addr.findall(html)
+    addr = str(addr).replace('[', '')
+    addr = str(addr).replace(']', '')
+    addr = str(addr).replace('\'', '')
     # print(addr)
     # form_tel = re.compile('[1084]?\s?</p>\s?<p>\s?(电话.+?)\s?<')
-    form_tel = re.compile('(电话.+?)\s?[<，]')
+    form_tel = re.compile('(电话[^/<>。]+?[0-9].+?)\s?[<，]')
     tel = form_tel.findall(html)
     tel = str(tel).replace(' ', '')
+    tel = str(tel).replace('[', '')
+    tel = str(tel).replace(']', '')
+    tel = str(tel).replace('\'', '')
     # print(tel)
-    form_fax = re.compile('(传真.+?)\s?<')
+    form_fax = re.compile('(传真[^至]+?)\s?<')
     fax = form_fax.findall(html)
     fax = str(fax).replace(' ', '')
+    fax = str(fax).replace('[', '')
+    fax = str(fax).replace(']', '')
+    fax = str(fax).replace('\'', '')
     # print(fax)
-    form_email = re.compile('(电?子?邮.+?tsinghua.+?)\s?</')
+    form_email = re.compile('(电?子?邮.+?tsinghua[^<>]+?)\s?</')
     email = form_email.findall(html)
-    # print(email)
+    #print(email)
+    if name=='':
+        email = ''
+    #print(email)
+    try:
+        email = email[email.index('href')]
+    except:
+        pass
+    #print(email)
     if 'href' in str(email):
         form_email2 = re.compile('"mailto:(.+?@.+?)"')
         email2 = form_email2.findall(str(email))
-        email[0] = '电子邮箱：' + email2[0]  # 超鏈接email....
+        email = '电子邮箱：' + str(email2)  # 超鏈接email....
     email = str(email).replace('AT', '@')
     email = str(email).replace('(at)', '@')
     email = str(email).replace('[at]', '@')
     email = str(email).replace(' ', '')
-    # print(email)
+    email = str(email).replace('[', '')
+    email = str(email).replace(']', '')
+    email = str(email).replace('\'', '')
+    email = str(email).replace('</font>', '')
+    email = str(email).replace('<fontsize="2">', '')
+    #print(email)
+    form_page = re.compile('主页.+?\s?.+?\s?.+?href="(.+?)"')
+    page = form_page.findall(html)
+    page = str(page).replace('[', '')
+    page = str(page).replace(']', '')
+    # print(page)
     # form_academic1 = re.compile('学术成果.+?(\[1][^<>[]+)',re.DOTALL)
     form_academic1 = re.compile('学术成果.+?(\[?1[\.\]、][^<>[]+)', re.DOTALL)
     academic1 = form_academic1.findall(html)
@@ -86,8 +116,10 @@ def get_info(url, info):
     # print(academic3)
     academic = academic1 + academic2 + academic3
     # print(academic)
-    info.update(name=name, address=addr, tel=tel, fax=fax, email=email, academic=academic)
+    info.update(name=name, address=addr, tel=tel, fax=fax, email=email, page=page, academic=academic)
+
     return info
+
 
 
 def get_Img(start_url, url, infos,detectionModel,recognitionModel):
@@ -105,15 +137,15 @@ def get_Img(start_url, url, infos,detectionModel,recognitionModel):
 
         info = get_info(url, info)
 
-        if info['name'] != '[]':
+        if info['name'] != '':
             # create new folder
-            path = "\luka\home\PycharmProjects\Github\Spider\Spider"
+            path = "/home/luka/PycharmProjects/Github/Spider/Spider/"
             title = time.strftime("%Y_%m_%d", time.localtime())
             new_path = os.path.join(path, title)
             if not os.path.isdir(new_path):
                 os.makedirs(new_path)
             pic_path = os.path.join(new_path, currentTime() + '.jpg')
-            urllib.request.urlretrieve(img_url, pic_path)  # store in the new folder
+            #urllib.request.urlretrieve(img_url, pic_path)  # store in the new folder
 
             info.update(img_url=img_url, url=url, img_path=pic_path)
             img = Image.open(io.BytesIO(urllib.request.urlopen(img_url).read()))
@@ -150,6 +182,8 @@ def get_Img(start_url, url, infos,detectionModel,recognitionModel):
             info['feature'] = []
             if len(bboxset) == 0:
                 return None
+
+            cv2.imwrite(pic_path,img)
             for bbox in bboxset:
                 feature = feature_Extract_spider(recognitionModel, bbox, extend, 128, 128)
                 feature = numpy.divide(feature, numpy.sqrt(numpy.dot(feature, feature.T)))

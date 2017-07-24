@@ -46,7 +46,7 @@ class Camera(QMainWindow, Ui_MainWindow):
         self.Qtvideo.autoFillBackground()
         self.timer.setInterval(10)
         self.timerRec.setInterval(1000)
-        self.timerSet.setInterval(150000)                                              #milisecond
+        self.timerSet.setInterval(7000)                                              #milisecond
         self.timer.timeout.connect(self.showCamera)
         self.timerRec.timeout.connect(self.preRecognize)
         self.timerSet.timeout.connect(self.dataAppend)
@@ -82,7 +82,7 @@ class Camera(QMainWindow, Ui_MainWindow):
         pass
 
     def dataAppend(self):
-        #databaseAppend(self.tempList)
+        databaseAppend(self.tempList)
         self.tempList['valid'] = False
         self.tempList['data'] = []
         pass
@@ -98,7 +98,8 @@ class Camera(QMainWindow, Ui_MainWindow):
         self.img2=self.img;
         cv2.cvtColor(self.img2, cv2.COLOR_BGR2RGB, self.img2)
         self.image = QImage(self.img2.data, width, height, bytesPerLine, QImage.Format_RGB888)
-        self.Qtvideo.setPixmap(QPixmap.fromImage(self.image))
+        tempImg = QPixmap.fromImage(self.image).scaled(self.Qtvideo.size())
+        self.Qtvideo.setPixmap(tempImg)
 
     def preRecognize(self):
         pic1 = self.img.copy()
@@ -109,6 +110,8 @@ class Camera(QMainWindow, Ui_MainWindow):
         [bboxCam1, imgCam1] = FaceDetect(pic1, 50, self.detectionModel)
         [bboxCam2, imgCam2] = FaceDetect(pic2, 50, self.detectionModel)
         [bboxCam3, imgCam3] = FaceDetect(pic3, 50, self.detectionModel)
+        if len(bboxCam1)*len(bboxCam2)*len(bboxCam3) == 0:
+            return None
         leftup1 = max(bboxCam1[0],bboxCam2[0],bboxCam3[0])
         leftup2 = max(bboxCam1[1],bboxCam2[1],bboxCam3[1])
         rightdown1 = min(bboxCam1[0]+bboxCam1[2],bboxCam2[0]+bboxCam2[2],bboxCam3[0]+bboxCam3[2])
@@ -133,57 +136,83 @@ class Camera(QMainWindow, Ui_MainWindow):
         for items in range(startVariable,len(self.tempList['data'])):   #further recover from the front
             info = self.tempList['data'][items]
             #temp_value = numpy.dot(feature,info['feature'].T)
-            if abs(numpy.dot(feature,info['feature'].T)-0.15>0.4):
-                if abs(timelabel-info['time']<10):
+            if abs(numpy.dot(feature,info['feature'].T)-0.0>0.4):
+                if abs(timelabel-info['time']<1000):
                     self.tempList['data'][items] = feaMap
                     return None
         self.tempList['data'].append(feaMap)
         #information={'name':'Zhu Haidong','recentVisit':[1,2,3],'firstVisit':5,'pageAddress':"http://mails.tsinghua.edu.cn/"}
         #information['photo']="/home/luka/PycharmProjects/cvlab/img/2.jpg"
-
+        start = time.clock()
         information = databaseSearch(feature)
-
+        print(time.clock()-start)
         if information=={}:
+            self.QtuserName.setText('')
+            self.QtVisit1.setText('')
+            self.QtVisit2.setText('')
+            self.QtVisit3.setText('')
+            self.QtFirstVisit.setText('')
             return None
+        print(time.clock()-start)
         if 'name' in information:
             self.name = information['name']
             self.QtuserName.setText(self.name)
-        if 'recentVisit' in information:
-            self.recent = information['recentVisit']
-            self.QtVisit1.setText(str(self.recent[0]))
-            self.QtVisit2.setText(str(self.recent[1]))
-            self.QtVisit3.setText(str(self.recent[2]))
+        print(time.clock()-start)
+        if 'visit0' in information:
+            if information['visit0']!=0:
+                self.QtVisit1.setText(str(information['visit0']))
+            else:
+                self.QtVisit1.setText('')
+        if 'visit1' in information:
+            if information['visit1']!=0:
+                self.QtVisit2.setText(str(information['visit1']))
+            else:
+                self.QtVisit2.setText('')
+        if 'visit2' in information:
+            if information['visit2']!=0:
+                self.QtVisit3.setText(str(information['visit2']))
+            else:
+                self.QtVisit3.setText('')
+
+        #if 'recentVisit' in information:
+        #    self.recent = information['recentVisit']
+        #    self.QtVisit1.setText(str(self.recent[0]))
+        #    self.QtVisit2.setText(str(self.recent[1]))
+        #    self.QtVisit3.setText(str(self.recent[2]))
+        print(time.clock()-start)
         if 'firstVisit' in information:
             self.QtFirstVisit.setText(str(information['firstVisit']))
+        else:
+            self.QtFirstVisit.setText('')
+        print(time.clock()-start)
         if 'url' in information:
             if 1 or self.homePage != information['url']:
                 self.homePage = information['url']
                 if self.homePage!= '':
                     self.webimage.capture(self.homePage)
-            #    screenShot(self.homePage)
-            #self.webimage.webimg = self.webimage.webimg.scaled(self.QtHomepage.size())
-                #self.image = QImage(self.img2.data, self.QtHomepage, bytesPerLine, QImage.Format_RGB888)
-                #self.Qtvideo.setPixmap(QPixmap.fromImage(self.image))
-                tempImg = QPixmap.fromImage(self.webimage.webimg).scaled(self.QtHomepage.size())
-                #tempImg = QPixmap.fromImage(self.webimage.webimg).scaled(self.QtHomepage.size())
-                self.QtHomepage.setPixmap(tempImg)
+                    tempImg = QPixmap.fromImage(self.webimage.webimg).scaled(self.QtHomepage.size())
+                    self.QtHomepage.setPixmap(tempImg)
             #self.QtHomepage.setPixmap(QPixmap('shot.png'))
+        print(time.clock()-start)
         if 'famiPeople' in information:
             self.relationship = information['famiPeople']
             self.QtName1.setText(self.relationship[0]['name'])
             self.QtName2.setText(self.relationship[1]['name'])
             self.QtPhoto1.setPixmap(QPixmap(self.relationship[0]['photoAdd']))
             self.QtPhoto2.setPixmap(QPixmap(self.relationship[1]['photoAdd']))
+        print(time.clock()-start)
         if 'img_path' in information:
             self.photo = information['img_path']                #recover
             tempPix = QPixmap(self.photo).scaled(self.QtPhoto.size())
             self.QtPhoto.setPixmap(tempPix)
+        print(time.clock()-start)
         
         pass
 
 
         print(self.tempList['valid'],len(self.tempList['data']))
         pass
+
 
     def Confirm(self):
         self.text1 = self.Message.lineEdit.text()
@@ -209,7 +238,7 @@ class dialogWindow(Ui_Dialog,QDialog):
 
 def screenShot(url):
     browser = webdriver.PhantomJS()
-    browser.set_window_size(1055, 800)
+    browser.set_window_size(900, 900)
     browser.get(url)
     std = browser.get_screenshot_as_png()
     browser.save_screenshot("shot.png")
@@ -226,7 +255,7 @@ class Screenshot(QWebView):
         self.load(QUrl(url))
         self.wait_load()
         frame = self.page().mainFrame()
-        self.page().setViewportSize(QSize(1600, 900))
+        self.page().setViewportSize(QSize(900, 900))
         self.webimg = QImage(self.page().viewportSize(), QImage.Format_ARGB32)
         painter = QPainter(self.webimg)
         frame.render(painter)
