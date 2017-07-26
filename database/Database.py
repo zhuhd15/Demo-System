@@ -1,7 +1,6 @@
 import pymysql
 import numpy
 import random
-import time
 import sys
 sys.path.append('/home/luka/PycharmProjects/Github/Demo-System')
 import spider,caffe
@@ -38,9 +37,15 @@ def fillInfo(informationDict):
     for i in range(0,10):
         if (not ('famiPeople' + str(i)) in informationDict.keys()):
             informationDict['famiPeople' + str(i)] = 0
+    for i in range(0,10):
+        if (not ('famiPeopleCnt' + str(i)) in informationDict.keys()):
+            informationDict['famiPeopleCnt' + str(i)] = 0
     for i in range(0,5):
         if (not ('tempFamiPeople' + str(i)) in informationDict.keys()):
             informationDict['tempFamiPeople' + str(i)] = 0
+    for i in range(0,5):
+        if (not ('tempFamiPeopleCnt' + str(i)) in informationDict.keys()):
+            informationDict['tempFamiPeopleCnt' + str(i)] = 0
     return informationDict
     pass
 
@@ -59,12 +64,15 @@ def featureTransvection(feature0 ,feature1):
     return trans
     pass
 
+def timeDist(time1, time2):
+    if time1 > time2:
+        return time1 - time2 - (((time1 // 100) - (time2 // 100))* 40)
+    else:
+        return time2 - time1 - (((time2 // 100) - (time1 // 100))* 40)
+    pass
+
 def databaseInit():
-    '''
-    database init
-    set up table user
-    '''
-    conn = pymysql.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
+    conn = .connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
     cur = conn.cursor()
     cur.execute("""
     create table if not exists user
@@ -95,11 +103,26 @@ def databaseInit():
         famiPeople7 smallint,
         famiPeople8 smallint,
         famiPeople9 smallint,
-        tempFamiPeople0 smallint,
-        tempFamiPeople1 smallint,
-        tempFamiPeople2 smallint,
-        tempFamiPeople3 smallint,
-        tempFamiPeople4 smallint
+        famiPeopleCnt0 int,
+        famiPeopleCnt1 int,
+        famiPeopleCnt2 int,
+        famiPeopleCnt3 int,
+        famiPeopleCnt4 int,
+        famiPeopleCnt5 int,
+        famiPeopleCnt6 int,
+        famiPeopleCnt7 int,
+        famiPeopleCnt8 int,
+        famiPeopleCnt9 int,
+        tempFamiPeople0 int,
+        tempFamiPeople1 int,
+        tempFamiPeople2 int,
+        tempFamiPeople3 int,
+        tempFamiPeople4 int,
+        tempFamiPeopleCnt0 int,
+        tempFamiPeopleCnt1 int,
+        tempFamiPeopleCnt2 int,
+        tempFamiPeopleCnt3 int,
+        tempFamiPeopleCnt4 int
     )auto_increment = 1 character set utf8;
     """)
     conn.commit()
@@ -108,11 +131,6 @@ def databaseInit():
     pass
 
 def databaseInsert(informationDict):
-    '''
-    insert a point into the K-dimensional Tree
-    informationDict:feature is not null
-    return:None
-    '''
     informationDict = fillInfo(informationDict)
     conn = pymysql.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
     cur = conn.cursor()
@@ -161,6 +179,7 @@ def databaseInsert(informationDict):
         tel,
         fax,
         email,
+        academic,
         url,
         firstVisit,
         visit0,
@@ -176,42 +195,72 @@ def databaseInsert(informationDict):
         famiPeople7,
         famiPeople8,
         famiPeople9,
+        famiPeopleCnt0,
+        famiPeopleCnt1,
+        famiPeopleCnt2,
+        famiPeopleCnt3,
+        famiPeopleCnt4,
+        famiPeopleCnt5,
+        famiPeopleCnt6,
+        famiPeopleCnt7,
+        famiPeopleCnt8,
+        famiPeopleCnt9,
         tempFamiPeople0,
         tempFamiPeople1,
         tempFamiPeople2,
         tempFamiPeople3,
-        tempFamiPeople4)
-        values({}, {}, {}, "{}", "{}", "{}", "{}", "{}", "{}", "{}", {}, {} ,{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {});
-    """.format(informationDict['leftson'],
-               informationDict['rightson'],
-               informationDict['depth'],
-               informationDict['img_path'],
-               informationDict['name'],
-               informationDict['address'],
-               informationDict['tel'],
-               informationDict['fax'],
-               informationDict['email'],
-               #informationDict['academic'],
-               informationDict['url'],
-               informationDict['firstVisit'],
-               informationDict['visit0'],
-               informationDict['visit1'],
-               informationDict['visit2'],
-               informationDict['famiPeople0'],
-               informationDict['famiPeople1'],
-               informationDict['famiPeople2'],
-               informationDict['famiPeople3'],
-               informationDict['famiPeople4'],
-               informationDict['famiPeople5'],
-               informationDict['famiPeople6'],
-               informationDict['famiPeople7'],
-               informationDict['famiPeople8'],
-               informationDict['famiPeople9'],
-               informationDict['tempFamiPeople0'],
-               informationDict['tempFamiPeople1'],
-               informationDict['tempFamiPeople2'],
-               informationDict['tempFamiPeople3'],
-               informationDict['tempFamiPeople4']))
+        tempFamiPeople4,
+        tempFamiPeopleCnt0,
+        tempFamiPeopleCnt1,
+        tempFamiPeopleCnt2,
+        tempFamiPeopleCnt3,
+        tempFamiPeopleCnt4)
+        values({}, {}, {}, "{}", "{}", "{}", "{}", "{}", "{}", "{}", "{}", {}, {} ,{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {});
+    """.format(informationDict['leftson'],#1
+               informationDict['rightson'],#2
+               informationDict['depth'],#3
+               informationDict['img_path'],#4
+               informationDict['name'],#5
+               informationDict['address'],#6
+               informationDict['tel'],#7
+               informationDict['fax'],#8
+               informationDict['email'],#9
+               informationDict['academic'],#10
+               informationDict['url'],#11
+               informationDict['firstVisit'],#12
+               informationDict['visit0'],#13
+               informationDict['visit1'],#14
+               informationDict['visit2'],#15
+               informationDict['famiPeople0'],#16
+               informationDict['famiPeople1'],#17
+               informationDict['famiPeople2'],#18
+               informationDict['famiPeople3'],#19
+               informationDict['famiPeople4'],#20
+               informationDict['famiPeople5'],#21
+               informationDict['famiPeople6'],#22
+               informationDict['famiPeople7'],#23
+               informationDict['famiPeople8'],#24
+               informationDict['famiPeople9'],#25
+               informationDict['famiPeopleCnt0'],#26
+               informationDict['famiPeopleCnt1'],#27
+               informationDict['famiPeopleCnt2'],#28
+               informationDict['famiPeopleCnt3'],#29
+               informationDict['famiPeopleCnt4'],#30
+               informationDict['famiPeopleCnt5'],#31
+               informationDict['famiPeopleCnt6'],#32
+               informationDict['famiPeopleCnt7'],#33
+               informationDict['famiPeopleCnt8'],#34
+               informationDict['famiPeopleCnt9'],#35
+               informationDict['tempFamiPeople0'],#36
+               informationDict['tempFamiPeople1'],#37
+               informationDict['tempFamiPeople2'],#38
+               informationDict['tempFamiPeople3'],#39
+               informationDict['tempFamiPeople4'],#40
+               informationDict['tempFamiPeopleCnt0'],#41
+               informationDict['tempFamiPeopleCnt1'],#42
+               informationDict['tempFamiPeopleCnt2'],#43
+               informationDict['tempFamiPeopleCnt3'],#44
+               informationDict['tempFamiPeopleCnt4']))#45
     cur.execute("create table if not exists feature" + str(infoCnt) +
     """(
         dim int not null primary key auto_increment,
@@ -219,18 +268,14 @@ def databaseInsert(informationDict):
     )auto_increment = 0;
     """)
     for i in range(0,512):
-        cur.execute("insert into feature" + str(infoCnt) + "(value)values({})".format(informationDict['feature'][i]))
+        cur.execute("insert into feature" + str(infoCnt) + "(value)values({});".format(informationDict['feature'][i]))
     conn.commit()
     cur.close()
     conn.close()
+    return infoCnt
     pass
 
 def databaseFind(feature):
-    '''
-    feature(the normalized eigenvalue):numpy.ndarray
-    find the nearest point to the feature on the K-dimensional Tree
-    return:[{feature}, {}, {}, {}, {}]
-    '''
     conn = pymysql.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
     cur = conn.cursor()
     infoCnt = cur.execute("select * from user")
@@ -307,26 +352,23 @@ def databaseFind(feature):
             tmpFeature = numpy.array(tmpFeature)
             if (len(dist) != 0) and (featureDist(feature, tmpFeature) < dist[len(dist) - 1]):
                 que.append(tmpInfo[2])
-    return ans
     conn.commit()
     cur.close()
     conn.close()
+    return ans
     pass
 
 def databaseRenew(informationDict):
-    '''
-    renew the information in the database.
-    informationDict{(the renewed information needs to be wrote in the database), 'feature':[ Normalized Eigenvalue ]}
-    return:None
-    '''
     conn = pymysql.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
     cur = conn.cursor()
     informationDict = fillInfo(informationDict)
     commonList = databaseFind(informationDict['feature'])
     if len(commonList) == 0:
         informationDict['firstVisit'] = informationDict['visit0']
-        databaseInsert(informationDict)
-        return
+        conn.commit()
+        cur.close()
+        conn.close()
+        return databaseInsert(informationDict)
     tmpId = 0
     tmpTrans = 0.55
     for i in commonList:
@@ -341,7 +383,7 @@ def databaseRenew(informationDict):
             tmpTrans = trans
             tmpId = i
     if tmpId == 0:
-        return
+        return 0
     if informationDict['img_path'] != '':
         cur.execute("update user set img_path = '{}' where idNo = {}".format(informationDict['img_path'], tmpId))
     if informationDict['name'] != '':
@@ -369,36 +411,171 @@ def databaseRenew(informationDict):
     conn.commit()
     cur.close()
     conn.close()
+    return tmpId
+    pass
+
+def databaseUpdateFami(idNo):
+    conn = pymysql.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
+    cur = conn.cursor()
+    cur.execute("select * from user where idNo = {}".format(idNo))
+    conn.commit()
+    tmpInfo = cur.fetchone()
+    tmpInfo = list(tmpInfo)
+    cur.close()
+    conn.close()
+    for i in range(0,5):
+        for j in range(0,10):
+            if (tmpInfo[36 + i] == tmpInfo[16 + j])and(tmpInfo[36 + i] != 0):
+                conn = pymysql.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
+                cur = conn.cursor()
+                cur.execute("update user set famiPeopleCnt" + str(j) + " = {} where idNo = {}".format(tmpInfo[41 + i] + tmpInfo[26 + j], idNo))
+                tmpInfo[26 + j] += tmpInfo[41 + i]
+                cur.execute("update user set tempFamiPeople" + str(i) + " = {} where idNo = {}".format(0, idNo))
+                tmpInfo[36 + i] = 0
+                cur.execute("update user set tempFamiPeopleCnt" + str(i) + " = {} where idNo = {}".format(0, idNo))
+                tmpInfo[41 + i] = 0
+                conn.commit()
+                cur.close()
+                conn.close()
+                break
+    conn = pymysql.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
+    cur = conn.cursor()
+    cur.execute("select * from user where idNo = {}".format(idNo))
+    conn.commit()
+    tmpInfo = cur.fetchone()
+    tmpInfo = list(tmpInfo)
+    cur.close()
+    conn.close()
+    for i in range(0,5):
+        for j in range(0,10):
+            if(tmpInfo[41 + i] >= tmpInfo[26 + j])and(tmpInfo[41 + i] != 0):
+                conn = pymysql.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
+                cur = conn.cursor()
+                for k in range(-8,1-j):
+                    cur.execute("update user set famiPeople" + str(1-k) + " = {} where idNo = {}".format(tmpInfo[16 - k], idNo))
+                    tmpInfo[17 - k] = tmpInfo[16 - k]
+                    cur.execute("update user set famiPeopleCnt" + str(1-k) + " = {} where idNo = {}".format(tmpInfo[26 - k], idNo))
+                    tmpInfo[27 - k] = tmpInfo[26 - k]
+                cur.execute("update user set famiPeople" + str(j) + " = {} where idNo = {}".format(tmpInfo[36 + i], idNo))
+                tmpInfo[16 + j] = tmpInfo[36 + i]
+                cur.execute("update user set famiPeopleCnt" + str(j) + " = {} where idNo = {}".format(tmpInfo[41 + i], idNo))
+                tmpInfo[26 + j] = tmpInfo[41 + i]
+                cur.execute("update user set tempFamiPeople" + str(i) + " = {} where idNo = {}".format(0, idNo))
+                tmpInfo[36 + i] = 0
+                cur.execute("update user set tempFamiPeopleCnt" + str(i) + " = {} where idNo = {}".format(0, idNo))
+                tmpInfo[41 + i] = 0
+                conn.commit()
+                cur.close()
+                conn.close()
+                break
+    conn = pymysql.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
+    cur = conn.cursor()
+    cur.execute("select * from user where idNo = {}".format(idNo))
+    tmpInfo = cur.fetchone()
+    tmpInfo = list(tmpInfo)
+    for i in range(0,10):
+        for j in range(0,i):
+            if tmpInfo[26 + j] < tmpInfo[26 + i]:
+                tmpInfo[16 + i], tmpInfo[16 + j] = tmpInfo[16 + j], tmpInfo[16 + i]
+                tmpInfo[26 + i], tmpInfo[26 + j] = tmpInfo[26 + j], tmpInfo[26 + i]
+    for i in range(0,10):
+        cur.execute("update user set famiPeople" + str(i) + " = {} where idNo = {}".format(tmpInfo[16 + i], idNo))
+        cur.execute("update user set famiPeopleCnt" + str(i) + " = {} where idNo = {}".format(tmpInfo[26 + i], idNo))
+    conn.commit()
+    cur.close()
+    conn.close()
     pass
 
 def databaseAppend(tempList):
-    '''
-    send the temporary list to the database once an hour.
-    tempList{'Valid':True/False, 'data':[ {} {} … ]}
-    list{'time':20170101170506, 'feature':[ Normalized Eigenvalue ]}
-    return:None
-    '''
+    deltaTime = 10
     conn = pymysql.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
     cur = conn.cursor()
+    idNo = []
     if tempList['valid']:
         for i in tempList['data']:
             informationDict = dict()
             informationDict = fillInfo(informationDict)
             informationDict['feature'] = i['feature']
             informationDict['visit0'] = i['time']
-            databaseRenew(informationDict)
-        conn.commit()
-        cur.close()
-        conn.close()
+            idNo.append(databaseRenew(informationDict))
+    length = len(idNo)
+    for i in range(0,length):
+        pt = 0
+        cur.execute("select * from user where idNo = {}".format(idNo[i]))
+        tmpInfo = cur.fetchone()
+        for j in range(-4,1):
+            if tmpInfo[36 - j] != 0:
+                pt = 1 - j
+                break
+        for j in range(1-i,1):
+            if idNo[-j] == idNo[i]:
+                continue
+            if timeDist(tempList['data'][i]['time'],tempList['data'][-j]['time']) <= deltaTime:
+                flag = 1
+                cur.execute("select * from user where idNo = {}".format(idNo[i]))
+                tmpInfo = cur.fetchone()
+                for k in range(0,pt):
+                    if tmpInfo[36 + k] == idNo[-j]:
+                        cur.execute("update user set tempFamiPeopleCnt" + str(k) + " = {} where idNo = {}".format(tmpInfo[41 + k] + 1, idNo[i]))
+                        flag = 0
+                        break
+                if flag and pt < 5:
+                    cur.execute("update user set tempFamiPeople" + str(pt) + " = {} where idNo = {}".format(idNo[-j], idNo[i]))
+                    cur.execute("update user set tempFamiPeopleCnt" + str(pt) + " = {} where idNo = {}".format(1, idNo[i]))
+                    pt += 1
+            else:
+                break
+        for j in range(i+1,length):
+            if idNo[j] == idNo[i]:
+                continue
+            if timeDist(tempList['data'][i]['time'],tempList['data'][j]['time']) <= deltaTime:
+                flag = 1
+                cur.execute("select * from user where idNo = {}".format(idNo[i]))
+                tmpInfo = cur.fetchone()
+                for k in range(0,pt):
+                    if tmpInfo[36 + k] == idNo[j]:
+                        cur.execute("update user set tempFamiPeopleCnt" + str(k) + " = {} where idNo = {}".format(tmpInfo[41 + k] + 1, idNo[i]))
+                        flag = 0
+                        break
+                if flag and pt < 5:
+                    cur.execute("update user set tempFamiPeople" + str(pt) + " = {} where idNo = {}".format(idNo[j], idNo[i]))
+                    cur.execute("update user set tempFamiPeopleCnt" + str(pt) + " = {} where idNo = {}".format(1, idNo[i]))
+                    pt += 1
+            else:
+                break
+    conn.commit()
+    cur.close()
+    conn.close()
+    for i in idNo:
+        databaseUpdateFami(i)
+    pass
+
+def databaseQuery(idNo):
+    conn = pymysql.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
+    cur = conn.cursor()
+    informationDict = dict()
+    informationDict = fillInfo(informationDict)
+    cur.execute("select * from user where idNo = {}".format(idNo))
+    tmpInfo = cur.fetchone()
+    informationDict['img_path'] = tmpInfo[4]
+    informationDict['name'] = tmpInfo[5]
+    informationDict['address'] = tmpInfo[6]
+    informationDict['tel'] = tmpInfo[7]
+    informationDict['fax'] = tmpInfo[8]
+    informationDict['email'] = tmpInfo[9]
+    informationDict['academic'] = tmpInfo[10]
+    informationDict['url'] = tmpInfo[11]
+    informationDict['firstVisit'] = tmpInfo[12]
+    informationDict['visit0'] = tmpInfo[13]
+    informationDict['visit1'] = tmpInfo[14]
+    informationDict['visit2'] = tmpInfo[15]
+    conn.commit()
+    cur.close()
+    conn.close()
+    return informationDict
     pass
 
 def databaseSearch(feature):
-    '''
-    search for information about the feature when the system gives a request.
-    feature(the normalized eigenvalue):numpy.ndarray
-    return:{'name':<str>, 'famiPeople':[{'name':<str>, 'photoAdd':<str>},{},{}], 'recentVisit':[int,int,int], 'firstVisit':int, 'pageAdd':<str>, 'photoAdd':<str>}
-    if there's nothing about the feature, then try a null dict.
-    '''
     conn = pymysql.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
     cur = conn.cursor()
     informationDict = dict()
@@ -427,34 +604,63 @@ def databaseSearch(feature):
     informationDict['tel'] = tmpInfo[7]
     informationDict['fax'] = tmpInfo[8]
     informationDict['email'] = tmpInfo[9]
-    #informationDict['academic'] = tmpInfo[10]
+    informationDict['academic'] = tmpInfo[10]
     informationDict['url'] = tmpInfo[11]
     informationDict['firstVisit'] = tmpInfo[12]
     informationDict['visit0'] = tmpInfo[13]
     informationDict['visit1'] = tmpInfo[14]
     informationDict['visit2'] = tmpInfo[15]
-    informationDict['famiPeople0'] = tmpInfo[16]
-    informationDict['famiPeople1'] = tmpInfo[17]
-    informationDict['famiPeople2'] = tmpInfo[18]
-    informationDict['famiPeople3'] = tmpInfo[19]
-    informationDict['famiPeople4'] = tmpInfo[20]
-    informationDict['famiPeople5'] = tmpInfo[21]
-    informationDict['famiPeople6'] = tmpInfo[22]
-    informationDict['famiPeople7'] = tmpInfo[23]
-    informationDict['famiPeople8'] = tmpInfo[24]
-    informationDict['famiPeople9'] = tmpInfo[25]
-    informationDict['tempFamiPeople0'] = tmpInfo[26]
-    informationDict['tempFamiPeople1'] = tmpInfo[27]
-    informationDict['tempFamiPeople2'] = tmpInfo[28]
-    informationDict['tempFamiPeople3'] = tmpInfo[29]
-    informationDict['tempFamiPeople4'] = tmpInfo[30]
-    return informationDict
+    informationDict['famiPeople0'] = databaseQuery(tmpInfo[16])
+    informationDict['famiPeople1'] = databaseQuery(tmpInfo[17])
+    informationDict['famiPeople2'] = databaseQuery(tmpInfo[18])
+    informationDict['famiPeople3'] = databaseQuery(tmpInfo[19])
+    informationDict['famiPeople4'] = databaseQuery(tmpInfo[20])
+    informationDict['famiPeople5'] = databaseQuery(tmpInfo[21])
+    informationDict['famiPeople6'] = databaseQuery(tmpInfo[22])
+    informationDict['famiPeople7'] = databaseQuery(tmpInfo[23])
+    informationDict['famiPeople8'] = databaseQuery(tmpInfo[24])
+    informationDict['famiPeople9'] = databaseQuery(tmpInfo[25])
     conn.commit()
     cur.close()
     conn.close()
+    return informationDict
     pass
 
-def DatabaseBase():
+def databaseTest():
+    tempList = dict()
+    tempList['valid'] = 1
+    tempList['data'] = []
+    time = 20170726091500
+    for i in range(0,50):
+        if (i > 0) and (random.randint(0,1) == 0):
+            tmpIdNo = random.randint(0,i-1)
+            info = dict()
+            info['feature'] = tempList['data'][tmpIdNo]['feature']
+            time += random.randint(1,10)
+            if time % 100 >= 60:
+                time += 40
+            info['time'] = time
+            tempList['data'].append(info)
+            continue
+        a = []
+        s = 0
+        for j in range(0,512):
+            a.append(random.uniform(-1,1))
+            s += a[j] * a[j]
+        s = s ** 0.5
+        for j in range(0,512):
+            a[j] /= s
+        info = dict()
+        info['feature'] = numpy.array(a)
+        time += random.randint(1,10)
+        if time % 100 >= 60:
+            time += 40
+        info['time'] = time
+        tempList['data'].append(info)
+    databaseAppend(tempList)
+    pass
+
+def databaseBase():
     caffe.set_mode_gpu()
     rootFile = '/home/luka/PycharmProjects/cvlab/protobuf1/'
     detectionPrototxt = rootFile + 'deploy_face_w.prototxt'
@@ -481,205 +687,37 @@ def DatabaseBase():
         if 'feature' in i.keys():
             databaseRenew(i)
     conn.commit()
+    while true:
+        cnt = cur.execute("selet * from user")
+        for i in range(0,cnt):
+            tmpInfo = cur.fetchone()
+            informationDict = databaseQuery(tmpInfo[0])
+            flag = 0
+            if informationDict['name'] == '':
+                informationDict = spider2.SpiderRenewer(informationDict, 0)
+                flag = 1
+            if informationDict['address'] == '':
+                informationDict = spider2.SpiderRenewer(informationDict, 0)
+                flag = 1
+            if informationDict['tel'] == '':
+                informationDict = spider2.SpiderRenewer(informationDict, 0)
+                flag = 1
+            if informationDict['fax'] == '':
+                informationDict = spider2.SpiderRenewer(informationDict, 0)
+                flag = 1
+            if informationDict['email'] == '':
+                informationDict = spider2.SpiderRenewer(informationDict, 0)
+                flag = 1
+            if informationDict['academic'] == '':
+                informationDict = spider2.SpiderRenewer(informationDict, 0)
+                flag = 1
+            if informationDict['url'] == '':
+                informationDict = spider2.SpiderRenewer(informationDict, 0)
+                flag = 1
+            databaseRenew(informationDict)
+        pass
     cur.close()
     conn.close()
 
 if __name__=="__main__":
-    DatabaseBase()
-    '''conn = pymysql.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
-    cur = conn.cursor()'''
-    '''information = {'name': "['张志军']", 'address': ['???'], 'email': "['电子邮箱：??']",
-                   'feature': [6.73086708e-03, -2.94301827e-02, 1.45628629e-02,
-                               1.83323175e-02, 3.12993526e-02, 3.68274823e-02,
-                               -5.73405959e-02, -5.09380102e-02, -6.85696723e-03,
-                               -9.19026136e-03, 3.61816883e-02, 3.98671068e-03,
-                               1.93181429e-02, -2.10391805e-02, 3.68980132e-02,
-                               -5.48064522e-03, -1.05138496e-02, -2.47119460e-02,
-                               1.73759516e-02, -5.59557788e-02, 4.44681523e-03,
-                               -7.41454735e-02, -2.63592824e-02, 6.80855736e-02,
-                               -8.32661390e-02, 7.39095658e-02, 1.16308155e-02,
-                               4.82669733e-02, 2.43654530e-02, 3.12886238e-02,
-                               6.24769479e-02, -6.36307299e-02, 4.28298488e-02,
-                               -2.79480647e-02, -6.89153820e-02, 3.87214050e-02,
-                               4.06248271e-02, 5.34901917e-02, 1.12777829e-01,
-                               4.76565445e-03, 1.20948674e-02, -1.10205598e-02,
-                               -1.80388018e-02, 2.65284125e-02, -3.13562602e-02,
-                               2.57509924e-03, 6.90454170e-02, 3.36628268e-03,
-                               4.61370423e-02, 2.59142332e-02, 3.29599865e-02,
-                               -4.05383073e-02, 1.35945082e-02, 2.32415553e-03,
-                               -5.09171747e-02, 1.33676315e-02, -5.10375574e-03,
-                               -3.17887478e-02, -3.08070630e-02, -1.23769911e-02,
-                               -1.96930896e-02, 1.76682677e-02, 1.56885237e-02,
-                               4.43000682e-02, 4.84952778e-02, 1.83967985e-02,
-                               2.23374087e-02, 1.07381314e-01, 2.34353729e-03,
-                               -3.97765404e-03, -3.58772799e-02, 4.52539092e-03,
-                               6.05667643e-02, 3.65946926e-02, -4.14976142e-02,
-                               3.98748741e-02, -9.65051576e-02, -4.54890653e-02,
-                               -5.54353073e-02, 4.18050662e-02, 1.50044833e-03,
-                               2.48108059e-02, -3.51064131e-02, 1.78025998e-02,
-                               -4.06294614e-02, 5.36608929e-03, -1.24338202e-01,
-                               1.92881785e-02, -6.42301217e-02, -1.03756767e-02,
-                               -3.52392793e-02, -4.83942032e-02, 3.46364602e-02,
-                               -2.51202751e-02, 1.67029053e-02, 1.94565356e-02,
-                               -4.24611010e-02, -4.36482802e-02, 4.71577309e-02,
-                               -1.97684355e-02, 4.81892079e-02, 2.52425745e-02,
-                               1.93801913e-02, 5.00888377e-02, 4.96191867e-02,
-                               -1.14566796e-02, -1.31107541e-02, -4.36267070e-02,
-                               -3.62377241e-02, 8.15830231e-02, 2.26670001e-02,
-                               -1.27674658e-02, 7.33955726e-02, -6.04191795e-03,
-                               -7.73720592e-02, -6.21486194e-02, 3.99936028e-02,
-                               3.23405489e-02, -2.81365365e-02, 1.79489180e-02,
-                               2.50870106e-03, -1.15597798e-02, -3.14883627e-02,
-                               -3.86883728e-02, 1.28462969e-03, -5.50674386e-02,
-                               8.66154302e-03, 7.23376591e-03, 6.19910937e-03,
-                               2.04048939e-02, 2.46340688e-02, -4.29610088e-02,
-                               6.89437687e-02, -7.49863451e-03, 1.87198557e-02,
-                               -5.68335224e-03, 4.79151495e-02, 7.28356615e-02,
-                               -4.10671681e-02, -3.71318720e-02, -4.27427031e-02,
-                               -7.38984048e-02, 7.30128139e-02, -3.80222052e-02,
-                               -2.94176247e-02, 1.71365943e-02, 1.01640485e-02,
-                               2.11970359e-02, -4.76328749e-03, -1.19259860e-02,
-                               -2.15869676e-02, -5.80632761e-02, -3.83093916e-02,
-                               2.00355370e-02, -3.70897017e-02, -3.86573859e-02,
-                               -1.87054779e-02, -5.02685532e-02, 2.19346453e-02,
-                               2.26766206e-02, 7.04408213e-02, -4.00829092e-02,
-                               -6.79347068e-02, -1.08407266e-01, 1.11914771e-02,
-                               3.54182795e-02, -4.66443552e-03, -2.55451035e-02,
-                               -5.55332825e-02, -5.74690141e-02, -3.29162553e-03,
-                               -5.37678425e-04, -4.43524569e-02, 8.60468077e-04,
-                               7.41606858e-03, -4.47724350e-02, 3.59006077e-02,
-                               2.29794942e-02, 2.77149621e-02, 9.28640068e-02,
-                               3.17951888e-02, 3.78747210e-02, -2.36180751e-03,
-                               -6.83198348e-02, 2.01514876e-03, 1.59106478e-02,
-                               -3.89336497e-02, -8.50734860e-02, -2.59205848e-02,
-                               -1.91784739e-01, -1.47017715e-02, 3.82660404e-02,
-                               -1.00710839e-02, -2.35921633e-03, -2.27355002e-03,
-                               4.27107587e-02, 1.05156571e-01, -5.15448377e-02,
-                               6.02331106e-03, 8.97434913e-03, 7.43116885e-02,
-                               -5.20565696e-02, -1.81006524e-03, -2.64808927e-02,
-                               4.02310528e-02, -4.56563272e-02, -3.63261765e-03,
-                               6.84758974e-03, 4.58915271e-02, -3.45880073e-03,
-                               -1.37378173e-02, -2.32979450e-02, 3.61537114e-02,
-                               -3.69074531e-02, -2.05637179e-02, 5.73105551e-02,
-                               -3.20997313e-02, -3.93821439e-03, -4.75018546e-02,
-                               1.31095098e-02, -6.90061301e-02, 2.18694955e-02,
-                               -1.41384508e-02, -4.68547307e-02, 5.08792810e-02,
-                               -3.24053457e-03, -1.52940778e-02, -5.35534136e-02,
-                               -4.25966009e-02, 4.94808052e-03, -1.86370704e-02,
-                               -7.67818242e-02, 4.51534092e-02, 7.14136288e-02,
-                               5.76046817e-02, -2.83318739e-02, 6.71081468e-02,
-                               -8.49447846e-02, 6.07815720e-02, 5.40368184e-02,
-                               4.59306389e-02, -2.02329792e-02, -7.33955503e-02,
-                               -7.73938373e-02, 7.65464008e-02, 6.65198267e-02,
-                               -7.24360272e-02, -2.72260774e-02, -2.28394456e-02,
-                               -1.52881555e-02, 3.79300527e-02, -2.52969190e-02,
-                               -4.50866893e-02, 2.59067235e-03, 1.69761628e-02,
-                               -7.16275647e-02, 2.85739098e-02, 5.29297367e-02,
-                               4.89551853e-03, -4.40959781e-02, -1.88653786e-02,
-                               5.01667857e-02, 1.17949292e-03, 4.87342365e-02,
-                               -3.84358577e-02, 2.72358526e-02, 4.09651510e-02,
-                               5.57704456e-02, -2.82040183e-02, -5.64720333e-02,
-                               -4.75442111e-02, -6.26633391e-02, -7.63500109e-02,
-                               -3.39279845e-02, -6.98818639e-02, -6.28806353e-02,
-                               -2.30420772e-02, 6.03814460e-02, 4.54551205e-02,
-                               2.02868190e-02, -1.82840787e-02, -2.59453338e-03,
-                               -8.70001987e-02, 5.05006220e-03, -6.03069959e-04,
-                               -3.32380198e-02, 3.06874458e-02, 9.19784009e-02,
-                               1.18212979e-02, 7.75002129e-03, -6.09237738e-02,
-                               -3.03128995e-02, -4.90321685e-03, -5.93016595e-02,
-                               3.95998545e-02, 1.54991383e-02, 9.64512210e-03,
-                               2.59207059e-02, -2.25530472e-02, -2.45276205e-02,
-                               -2.14263313e-02, 3.17289904e-02, -8.65958109e-02,
-                               7.10390955e-02, 6.75831363e-02, -4.06231843e-02,
-                               6.78821728e-02, 7.06873182e-03, 5.60809411e-02,
-                               1.51192723e-03, -5.91973737e-02, 3.99504900e-02,
-                               1.71808545e-02, 5.20870537e-02, 5.97743951e-02,
-                               1.29669318e-02, 2.06763148e-02, 5.40933013e-02,
-                               -2.80925096e-03, -5.45007922e-02, 1.28601879e-01,
-                               -6.25106767e-02, -8.88793729e-03, 2.87321303e-02,
-                               -3.52688879e-02, 9.98077076e-03, 9.25896782e-03,
-                               -1.26403170e-02, 3.31691206e-02, 1.11367062e-01,
-                               5.28096966e-02, 4.13753018e-02, 6.87546656e-02,
-                               7.58808404e-02, 8.48198123e-03, 7.86152706e-02,
-                               1.24239887e-03, -7.37212924e-03, 3.95744480e-02,
-                               3.28333117e-03, -1.41533306e-02, 1.08314883e-02,
-                               7.01383352e-02, -2.53236536e-02, 5.44047281e-02,
-                               -2.09017470e-02, -1.07216641e-01, -2.24451162e-02,
-                               3.91361816e-03, 4.91617471e-02, -9.38450824e-03,
-                               7.68807307e-02, -1.98643841e-02, 4.84972931e-02,
-                               6.02341816e-03, 2.46985927e-02, -3.65012069e-03,
-                               -3.66932526e-02, -2.89552696e-02, 3.91362868e-02,
-                               1.43644689e-02, 3.88031900e-02, -2.25609131e-02,
-                               1.09167444e-02, 2.62328424e-02, -7.63828978e-02,
-                               5.52295074e-02, 1.96868442e-02, -1.05432430e-02,
-                               4.49799118e-05, -2.13553719e-02, -1.93250668e-03,
-                               1.49910329e-02, 1.09923678e-02, 4.45025116e-02,
-                               -5.92797995e-02, 4.67666751e-03, 3.61543382e-03,
-                               3.20543535e-02, -3.05566173e-02, 3.40715088e-02,
-                               9.04456377e-02, -4.61067678e-03, 1.47137756e-03,
-                               7.15495795e-02, -1.63266659e-02, -9.92763340e-02,
-                               -3.72165591e-02, -3.78872547e-03, -6.44522207e-03,
-                               6.12584427e-02, 1.39892800e-02, -3.49581093e-02,
-                               -3.55244949e-02, 3.25619094e-02, -6.60414947e-03,
-                               7.19019994e-02, -2.96380371e-02, -7.64355436e-03,
-                               -1.71777233e-02, -2.05337852e-02, -7.66668096e-02,
-                               6.46559671e-02, 1.13752969e-02, -1.19766062e-02,
-                               1.31874047e-02, 2.64917873e-02, 1.85914040e-02,
-                               -7.00949167e-04, 4.76376899e-02, 1.94561891e-02,
-                               3.11776102e-02, 1.32506993e-02, 1.24940062e-02,
-                               -3.13807353e-02, 4.76723828e-04, -7.54705770e-03,
-                               -8.40000249e-03, 4.89070313e-03, -4.80160341e-02,
-                               4.21047769e-02, 5.11926413e-02, 1.54927922e-02,
-                               5.12672737e-02, 5.34350658e-03, 2.60794396e-03,
-                               5.61702205e-03, 3.99596207e-02, 5.23508936e-02,
-                               -5.22502325e-02, 5.03775179e-02, -1.83829328e-03,
-                               5.65930679e-02, -5.91964982e-02, 1.69529300e-02,
-                               2.12711357e-02, 2.62868553e-02, -5.74460812e-02,
-                               4.75092717e-02, 3.91144082e-02, -3.99841517e-02,
-                               4.10010526e-03, -3.40937860e-02, 5.64233139e-02,
-                               -2.75911894e-02, -9.44606960e-02, -4.10288498e-02,
-                               -2.93575693e-02, -1.99856237e-02, 7.39237294e-02,
-                               -5.87126352e-02, 4.88568060e-02, 8.12605023e-02,
-                               -8.92232805e-02, -3.52021903e-02, -4.78064120e-02,
-                               -5.95240518e-02, 8.00767764e-02, -4.60182615e-02,
-                               -5.46263717e-03, -6.12969045e-03, -4.62199040e-02,
-                               -2.12397296e-02, 6.53318539e-02, 4.75921594e-02,
-                               4.89275716e-02, 3.78907546e-02, -2.28312127e-02,
-                               -7.77202770e-02, -7.22896867e-03, 1.89303905e-02,
-                               -6.76713437e-02, 4.22497001e-03, -4.37928177e-02,
-                               -3.11760493e-02, 1.87209267e-02, -1.54944323e-02,
-                               4.66332724e-03, 4.68296148e-02, -6.22479990e-02,
-                               -3.02057359e-02, 4.52510081e-02, -2.31964011e-02,
-                               -1.58325024e-02, 3.47425267e-02, 3.16667594e-02,
-                               -7.82963336e-02, -9.66563914e-03, 1.16355363e-02,
-                               -7.26174936e-02, -4.42587957e-02, -6.44550398e-02,
-                               1.73911080e-02, 3.00390199e-02, 7.79711828e-02,
-                               -2.33790111e-02, 1.36430021e-02, -8.42198431e-02,
-                               3.73488367e-02, -3.02923080e-02, 4.16007601e-02,
-                               4.30523045e-02, -3.54150757e-02, 1.84170040e-03,
-                               2.37869993e-02, -3.47432904e-02, -3.63558754e-02,
-                               4.52818256e-03, -7.45410696e-02, -2.78840936e-03,
-                               -9.60513651e-02, 6.60470724e-02]}'''
-    '''cur.execute("select * from feature31")
-    tmpFea = []
-    for i in range(0,512):
-        tmp = cur.fetchone()
-        tmpFea.append(tmp[1])
-    print(featureTransvection(tmpFea,information['feature']))
-    print(featureDist(tmpFea, information['feature']))
-    info = databaseSearch(information['feature'])
-    print(info)
-    databaseInit()
-    tmpList = spider.Spider()
-    for i in tmpList:
-        if ('academic' in i.keys()) and (type(i['academic']) is list):
-            tmpStr = ''
-            for j in i['academic']:
-                tmpStr += j + ';'
-            i['academic'] = tmpStr
-        #print(i)
-        if 'feature' in i.keys():
-            databaseInsert(i)
-    conn.commit()
-    cur.close()
-    conn.close()'''
+    databaseBase()
