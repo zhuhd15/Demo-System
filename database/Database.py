@@ -1,10 +1,16 @@
 import pymysql
 import numpy
 import random
-import sys
-sys.path.append('/home/luka/PycharmProjects/Github/Demo-System')
-import spider,caffe
-import spider2
+import time
+#import sys
+#sys.path.append('/home/luka/PycharmProjects/Github/Demo-System')
+#import spider,caffe
+#import spider2
+
+global databaseRebuilding
+databaseRebuilding = 0
+global transLim
+transLim = 0.4
 
 def fillInfo(informationDict):
     if (not 'leftson' in informationDict.keys()):
@@ -71,8 +77,75 @@ def timeDist(time1, time2):
         return time2 - time1 - (((time2 // 100) - (time1 // 100))* 40)
     pass
 
+def unionInfo(info1, info2):
+    info = dict()
+    info['img_path'] = info1['img_path']
+    if info['img_path'] == '':
+        info['img_path'] = info2['img_path']
+    info['name'] = info1['name']
+    if info['name'] == '':
+        info['name'] = info2['name']
+    info['address'] = info1['address']
+    if info['address'] == '':
+        info['address'] = info2['address']
+    info['tel'] = info1['tel']
+    if info['tel'] == '':
+        info['tel'] = info2['tel']
+    info['fax'] = info1['fax']
+    if info['fax'] == '':
+        info['fax'] = info2['fax']
+    info['email'] = info1['email']
+    if info['email'] == '':
+        info['email'] = info2['email']
+    info['academic'] = info1['academic']
+    if info['academic'] == '':
+        info['academic'] = info2['academic']
+    info['url'] = info1['url']
+    if info['url'] == '':
+        info['url'] = info2['url']
+    info['firstVisit'] = info1['firstVisit']
+    if (info2['firstVisit'] != 0)and(info2['firstVisit']<info['firstVisit']):
+        info['firstVisit'] = info2['firstVisit']
+    visitList = []
+    for i in range(0,3):
+        vitisList.append(info1['visit' + str(i)])
+        vitisList.append(info2['visit' + str(i)])
+    visitList.sort()
+    for i in range(0,3):
+        info['visit' + str(i)] = visitList[i]
+    famiList = []
+    for i in range(0,10):
+        flag = 0
+        for j in range(0,len(famiList)):
+            if info1['famiPeople' + str(i)] == famiList[j][0]:
+                famiList[j][1] += info1['famiPeopleCnt' + str(i)]
+                flag = 1
+                break
+        if flag:
+            continue
+        famiList.append(list(info1['famiPeople' + str(i)], info1['famiPeopleCnt' + str(i)]))
+    for i in range(0,10):
+        flag = 0
+        for j in range(0,len(famiList)):
+            if info2['famiPeople' + str(i)] == famiList[j][0]:
+                famiList[j][1] += info2['famiPeopleCnt' + str(i)]
+                flag = 1
+                break
+        if flag:
+            continue
+        famiList.append(list(info2['famiPeople' + str(i)], info2['famiPeopleCnt' + str(i)]))
+    for i in range(len(famiList)):
+        for j in range(0,i):
+            if famiList[i][1] > famiList[j][1]:
+                famiList[i], famiList[j] = famiList[j], famiList[i]
+    for i in range(0,min(10,len(famiList))):
+        info['famiPeople' + str(i)] = famiList[i][0]
+        info['famiPeopleCnt' + str(i)] = famiList[i][1]
+    return info
+    pass
+
 def databaseInit():
-    conn = .connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
+    conn = pymysql.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
     cur = conn.cursor()
     cur.execute("""
     create table if not exists user
@@ -364,13 +437,15 @@ def databaseRenew(informationDict):
     informationDict = fillInfo(informationDict)
     commonList = databaseFind(informationDict['feature'])
     if len(commonList) == 0:
-        informationDict['firstVisit'] = informationDict['visit0']
+        if informationDict['firstVisit'] == 0:
+            informationDict['firstVisit'] = informationDict['visit0']
         conn.commit()
         cur.close()
         conn.close()
         return databaseInsert(informationDict)
     tmpId = 0
-    tmpTrans = 0.55
+    global transLim
+    tmpTrans = transLim
     for i in commonList:
         cur.execute("select * from feature" + str(i))
         tmpFeature = []
@@ -500,6 +575,8 @@ def databaseAppend(tempList):
             idNo.append(databaseRenew(informationDict))
     length = len(idNo)
     for i in range(0,length):
+        if idNo[i] == 0:
+            continue
         pt = 0
         cur.execute("select * from user where idNo = {}".format(idNo[i]))
         tmpInfo = cur.fetchone()
@@ -565,10 +642,33 @@ def databaseQuery(idNo):
     informationDict['email'] = tmpInfo[9]
     informationDict['academic'] = tmpInfo[10]
     informationDict['url'] = tmpInfo[11]
-    informationDict['firstVisit'] = tmpInfo[12]
-    informationDict['visit0'] = tmpInfo[13]
-    informationDict['visit1'] = tmpInfo[14]
-    informationDict['visit2'] = tmpInfo[15]
+    conn.commit()
+    cur.close()
+    conn.close()
+    return informationDict
+    pass
+
+def databaseQueryFeature(idNo):
+    conn = pymysql.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
+    cur = conn.cursor()
+    informationDict = dict()
+    informationDict = fillInfo(informationDict)
+    tmpFeature = []
+    cur.execute("select * from feature" + str(idNo))
+    for i in range(0,512):
+        tmpInfo = cur.fetchone()
+        tmpFeature.append(tmpInfo[1])
+    informationDict['feature'] = tmpFeature
+    cur.execute("select * from user where idNo = {}".format(idNo))
+    tmpInfo = cur.fetchone()
+    informationDict['img_path'] = tmpInfo[4]
+    informationDict['name'] = tmpInfo[5]
+    informationDict['address'] = tmpInfo[6]
+    informationDict['tel'] = tmpInfo[7]
+    informationDict['fax'] = tmpInfo[8]
+    informationDict['email'] = tmpInfo[9]
+    informationDict['academic'] = tmpInfo[10]
+    informationDict['url'] = tmpInfo[11]
     conn.commit()
     cur.close()
     conn.close()
@@ -626,12 +726,104 @@ def databaseSearch(feature):
     return informationDict
     pass
 
+def databaseRebuild():
+    databaseRebuilding = 1
+    conn = pymysql.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
+    cur = conn.cursor()
+    infoDictList = []
+    visitList = []
+    flagList = []
+    cnt = cur.execute("select * from user")
+    for i in range(0,cnt):
+        cur.execute("select * from user where idNo = {}".format(i+1))
+        tmpInfo = cur.fetchone()
+        informationDict = dict()
+        informationDict = fillInfo(informationDict)
+        informationDict['img_path'] = tmpInfo[4]
+        informationDict['name'] = tmpInfo[5]
+        informationDict['address'] = tmpInfo[6]
+        informationDict['tel'] = tmpInfo[7]
+        informationDict['fax'] = tmpInfo[8]
+        informationDict['email'] = tmpInfo[9]
+        informationDict['academic'] = tmpInfo[10]
+        informationDict['url'] = tmpInfo[11]
+        informationDict['firstVisit'] = tmpInfo[12]
+        informationDict['visit0'] = tmpInfo[13]
+        informationDict['visit1'] = tmpInfo[14]
+        informationDict['visit2'] = tmpInfo[15]
+        informationDict['famiPeople0'] = tmpInfo[16]
+        informationDict['famiPeople1'] = tmpInfo[17]
+        informationDict['famiPeople2'] = tmpInfo[18]
+        informationDict['famiPeople3'] = tmpInfo[19]
+        informationDict['famiPeople4'] = tmpInfo[20]
+        informationDict['famiPeople5'] = tmpInfo[21]
+        informationDict['famiPeople6'] = tmpInfo[22]
+        informationDict['famiPeople7'] = tmpInfo[23]
+        informationDict['famiPeople8'] = tmpInfo[24]
+        informationDict['famiPeople9'] = tmpInfo[25]
+        informationDict['famiPeopleCnt0'] = tmpInfo[26]
+        informationDict['famiPeopleCnt1'] = tmpInfo[27]
+        informationDict['famiPeopleCnt2'] = tmpInfo[28]
+        informationDict['famiPeopleCnt3'] = tmpInfo[29]
+        informationDict['famiPeopleCnt4'] = tmpInfo[30]
+        informationDict['famiPeopleCnt5'] = tmpInfo[31]
+        informationDict['famiPeopleCnt6'] = tmpInfo[32]
+        informationDict['famiPeopleCnt7'] = tmpInfo[33]
+        informationDict['famiPeopleCnt8'] = tmpInfo[34]
+        informationDict['famiPeopleCnt9'] = tmpInfo[35]
+        informationDict['tempFamiPeople0'] = tmpInfo[36]
+        informationDict['tempFamiPeople1'] = tmpInfo[37]
+        informationDict['tempFamiPeople2'] = tmpInfo[38]
+        informationDict['tempFamiPeople3'] = tmpInfo[39]
+        informationDict['tempFamiPeople4'] = tmpInfo[40]
+        informationDict['tempFamiPeopleCnt0'] = tmpInfo[41]
+        informationDict['tempFamiPeopleCnt1'] = tmpInfo[42]
+        informationDict['tempFamiPeopleCnt2'] = tmpInfo[43]
+        informationDict['tempFamiPeopleCnt3'] = tmpInfo[44]
+        informationDict['tempFamiPeopleCnt4'] = tmpInfo[45]
+        tmpFeature = []
+        cur.execute("select * from feature" + str(tmpInfo[0]))
+        for j in range(0,512):
+            tmpFeaInfo = cur.fetchone()
+            tmpFeature.append(tmpFeaInfo[1])
+        informationDict['feature'] = tmpFeature
+        infoDictList.append(informationDict)
+        visitList.append(tmpInfo[13])
+        flagList.append(1)
+        global transLim
+        tmpTrans = transLim
+        for j in range(0,i):
+            if (flagList[j] == 1)and(featureTransvection(infoDictList[i]['feature'],infoDictList[j]['feature']) > tmpTrans):
+                flagList[i] = 0
+                infoDictList[j] = unionInfo(infoDictList[i],infoDictList[j])
+        cur.execute("drop table feature" + str(tmpInfo[0]))
+    conn.commit()
+    for i in range(0,cnt):
+        if flagList[i] * visitList[i] == 0:
+            visitList[i] = 99999999999999
+    for i in range(0,cnt):
+        for j in range(0,i):
+            if visitList[i] < visitList[j]:
+                visitList[i], visitList[j] = visitList[j], visitList[i]
+    timeLim = visitList[int(cnt * 0.5)]
+    cur.execute("drop table user")
+    conn.commit()
+    databaseInit()
+    for i in range(0,cnt):
+        if infoDictList[i]['visit0'] <= timeLim:
+            databaseInsert(infoDictList[i])
+    conn.commit()
+    cur.close()
+    conn.close()
+    databaseRebuilding = 0
+    pass
+
 def databaseTest():
     tempList = dict()
     tempList['valid'] = 1
     tempList['data'] = []
     time = 20170726091500
-    for i in range(0,50):
+    for i in range(0,1000):
         if (i > 0) and (random.randint(0,1) == 0):
             tmpIdNo = random.randint(0,i-1)
             info = dict()
@@ -660,7 +852,7 @@ def databaseTest():
     databaseAppend(tempList)
     pass
 
-def databaseBase():
+def DatabaseBase():
     caffe.set_mode_gpu()
     rootFile = '/home/luka/PycharmProjects/cvlab/protobuf1/'
     detectionPrototxt = rootFile + 'deploy_face_w.prototxt'
@@ -688,31 +880,34 @@ def databaseBase():
             databaseRenew(i)
     conn.commit()
     while true:
-        cnt = cur.execute("selet * from user")
+        cnt = cur.execute("select * from user")
+        if cnt > 500:
+            databaseRebulid()
+            continue
         for i in range(0,cnt):
             tmpInfo = cur.fetchone()
-            informationDict = databaseQuery(tmpInfo[0])
+            informationDict = databaseQueryFeature(tmpInfo[0])
             flag = 0
             if informationDict['name'] == '':
-                informationDict = spider2.SpiderRenewer(informationDict, 0)
+                informationDict = spider2.SpiderRenewer(informationDict, caffemodel)
                 flag = 1
             if informationDict['address'] == '':
-                informationDict = spider2.SpiderRenewer(informationDict, 0)
+                informationDict = spider2.SpiderRenewer(informationDict, caffemodel)
                 flag = 1
             if informationDict['tel'] == '':
-                informationDict = spider2.SpiderRenewer(informationDict, 0)
+                informationDict = spider2.SpiderRenewer(informationDict, caffemodel)
                 flag = 1
             if informationDict['fax'] == '':
-                informationDict = spider2.SpiderRenewer(informationDict, 0)
+                informationDict = spider2.SpiderRenewer(informationDict, caffemodel)
                 flag = 1
             if informationDict['email'] == '':
-                informationDict = spider2.SpiderRenewer(informationDict, 0)
+                informationDict = spider2.SpiderRenewer(informationDict, caffemodel)
                 flag = 1
             if informationDict['academic'] == '':
-                informationDict = spider2.SpiderRenewer(informationDict, 0)
+                informationDict = spider2.SpiderRenewer(informationDict, caffemodel)
                 flag = 1
             if informationDict['url'] == '':
-                informationDict = spider2.SpiderRenewer(informationDict, 0)
+                informationDict = spider2.SpiderRenewer(informationDict, caffemodel)
                 flag = 1
             databaseRenew(informationDict)
         pass
@@ -720,4 +915,4 @@ def databaseBase():
     conn.close()
 
 if __name__=="__main__":
-    databaseBase()
+    DatabaseBase()
