@@ -8,6 +8,8 @@ def FaceDetect_spider(im,min_size,net):
     pad_size = min(256,round(heigth*0.31))
     mean_value=numpy.mean(im)
     Ip= cv2.copyMakeBorder(im,pad_size,pad_size,pad_size,pad_size,cv2.BORDER_CONSTANT,value=[mean_value,mean_value,mean_value])
+    #cv2.imshow('ttt',Ip)
+    #cv2.waitKey(0)
     Hp,Wp,Dp=Ip.shape
     rsz = math.ceil(2*math.ceil(16*min(Hp,Wp)/min_size)/16)*16;
     if Wp >= Hp:

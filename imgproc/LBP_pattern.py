@@ -1,5 +1,7 @@
 from numpy import *
-from numpy import linalg as la
+import numpy,time
+from featureCal import *
+from face_detection import FaceDetect
 import cv2
 import os
 import math
@@ -18,7 +20,7 @@ def minBinary(pixel):
 
 
 def loadImageSet(add):
-    FaceMat = mat(zeros((15, 98 * 116)))
+    FaceMat = mat(zeros((15, 130 * 146)))
     j = 0
     for i in os.listdir(add):
         if i.split('.')[1] == 'noglasses':
@@ -38,24 +40,26 @@ def LBP(FaceMat, R=2, P=8):
     Region8_y = [-1, -1, -1, 0, 1, 1, 1, 0]
     pi = math.pi
     LBPoperator = mat(zeros(shape(FaceMat)))
-    for i in range(shape(FaceMat)[1]):
-        face = FaceMat[:, i].reshape(116, 98)
-        W, H = shape(face)
-        tempface = mat(zeros((W, H)))
-        for x in range(R, W - R):
-            for y in range(R, H - R):
-                repixel = ''
-                pixel = int(face[x, y])
-                for p in [2, 1, 0, 7, 6, 5, 4, 3]:
-                    p = float(p)
-                    xp = x + R * cos(2 * pi * (p / P))
-                    yp = y - R * sin(2 * pi * (p / P))
-                    if face[xp, yp] > pixel:
-                        repixel += '1'
-                    else:
-                        repixel += '0'
-                tempface[x, y] = int(minBinary(repixel), base=2)
-        LBPoperator[:, i] = tempface.flatten().T
+    #for i in range(shape(FaceMat)[1]):
+    #face = FaceMat[:, i].reshape(144, 120)
+    i = 0;
+    face = FaceMat;
+    W, H = shape(face)
+    tempface = mat(zeros((W, H)))
+    for x in range(R, W - R):
+        for y in range(R, H - R):
+            repixel = ''
+            pixel = int(face[x, y])
+            for p in [2, 1, 0, 7, 6, 5, 4, 3]:
+                p = float(p)
+                xp = x + R * cos(2 * pi * (p / P))
+                yp = y - R * sin(2 * pi * (p / P))
+                if face[xp, yp] > pixel:
+                    repixel += '1'
+                else:
+                    repixel += '0'
+            tempface[x, y] = int(minBinary(repixel), base=2)
+    LBPoperator[:, i] = tempface.flatten().T
         # cv2.imwrite(str(i)+'hh.jpg',array(tempface,uint8))
     return LBPoperator
 
@@ -125,6 +129,88 @@ def colorMoment(img):
     color_feature.extend([h_thirdMoment, s_thirdMoment, v_thirdMoment])
 
     return color_feature
+
+def featureGenerate(caffemodel,picture):
+
+    picture = cv2.cvtColor(picture,cv2.COLOR_BGR2RGB)
+    min_size = 50
+    [bbox, Ip] = FaceDetect(picture, min_size, caffemodel)
+    if bbox == [] :
+        return None
+    if bbox[2] < 100 or bbox[3] < 100:
+        return []
+    #S = max(bbox[2], bbox[3])
+    start = time.clock()
+    S = max(bbox[2], bbox[3]) * 1.3
+
+    bbox[0] = bbox[0] + (bbox[2] - S) / 2
+    bbox[1] = bbox[1] + (bbox[3] - S) / 2
+    bbox[3] = bbox[2] = S
+    a = int(bbox[0])
+    b = int(bbox[1])
+    c = int(bbox[2])
+    d = int(bbox[3])
+    originFace = Ip[b:(b + d), a: (a + c)]
+    print(originFace.shape)
+    if originFace.shape[0]<10 or originFace.shape[1]<10:
+        return []
+    faceImg = cv2.resize(originFace,(146,130),interpolation=cv2.INTER_CUBIC)[:,:,0]
+    sp = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]]
+    LBP_pic =LBP_Picture(faceImg,sp, 0, 1)
+    mapEd = getmapping(8, 1)
+    #facePattern = LBP(faceImg)
+    lbp = numpy.zeros(3304)
+    lbpIndex = 0
+    print(time.clock() - start)
+    for x in range(0,113,16):
+        for y in range(0,97,16):
+            pix = LBP_pic[y:min(y+32,128),x:min(x+32,144)]
+            lbpValue = LBP_Column(pix,1,8,mapEd,0)
+            #lbpIndex+=59
+            for z in range(lbpIndex,lbpIndex+59):
+                lbp[z]=lbpValue[z%59]
+            lbpIndex+=59
+    colour_moment = colorMoment(originFace)
+    return [lbp,colour_moment]
+    pass
+
+def featureGen(originFace):
+    '''picture = cv2.cvtColor(picture,cv2.COLOR_BGR2RGB)
+    min_size = 50
+    [bbox, Ip] = FaceDetect(picture, min_size, caffemodel)
+    if bbox == []:
+        return None
+    S = max(bbox[2], bbox[3])
+#    S = max(bbox[2], bbox[3]) * 1.3
+
+    bbox[0] = bbox[0] + (bbox[2] - S) / 2
+    bbox[1] = bbox[1] + (bbox[3] - S) / 2
+    bbox[3] = bbox[2] = S
+    a = int(bbox[0])
+    b = int(bbox[1])
+    c = int(bbox[2])
+    d = int(bbox[3])
+    if bbox[2] < 100 or bbox[3] < 100:
+        return []
+    originFace = Ip[b:(b + d), a: (a + c)]'''
+    faceImg = cv2.resize(originFace, (146, 130), interpolation=cv2.INTER_CUBIC)[:, :, 0]
+    sp = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]]
+    LBP_pic = LBP_Picture(faceImg, sp, 0, 1)
+    mapEd = getmapping(8, 1)
+    # facePattern = LBP(faceImg)
+    lbp = numpy.zeros(3304)
+    lbpIndex = 0
+    for x in range(0, 113, 16):
+        for y in range(0, 97, 16):
+            pix = LBP_pic[y:min(y + 32, 128), x:min(x + 32, 144)]
+            lbpValue = LBP_Column(pix, 1, 8, mapEd, 0)
+            # lbpIndex+=59
+            for z in range(lbpIndex, lbpIndex + 59):
+                lbp[z] = lbpValue[z % 59]
+            lbpIndex += 59
+    colour_moment = colorMoment(originFace)
+    return [lbp, colour_moment]
+    pass
 
 if __name__=='__main__':
     pass
