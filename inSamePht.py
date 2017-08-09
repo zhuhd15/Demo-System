@@ -151,19 +151,15 @@ def get_Img(start_url, url,caffemodel):
     info = {'valid':False}
 
     for img_url in img_list:
-        info = {}
         # time.sleep(1)
         if 'http' not in img_url:
             img_url = start_url + img_url
-        # print('saved  ' + str(sum) + ' pictures   capturing <---  ' + img_url)
-
-        #info = get_info(url, info)
-        #info.update(img_url=img_url, url=url)
-        #if info['name'] != '[]':
-        #    store_pic(img_url, info)            #save the picture to local
 
         try:
             img = Image.open(io.BytesIO(urllib.request.urlopen(img_url, timeout=2).read()))
+            rgb_im = img.convert('RGB')
+            # rgb_im.save('colors.jpg')
+            img = numpy.array(rgb_im)
         except:
             continue
         imag = numpy.array(img)
@@ -172,7 +168,7 @@ def get_Img(start_url, url,caffemodel):
             aaa=2
 
         infos = {}
-        store_pic(url,infos)
+        store_pic(img_url,infos)
         #print(url)
         try:
             imag = imag[:, :, ::-1].copy()
@@ -181,10 +177,6 @@ def get_Img(start_url, url,caffemodel):
         W, H, D = imag.shape
         if D>3:
             continue
-            #imag = Image.new("RGB", img.size, (255, 255, 255))
-            #imag = numpy.array(imag)
-            #imag = cv2.cvtColor(imag,cv2.COLOR_RGB2BGR)
-            # Convert RGB to BGR
         img = imag
         if H < 512 or W < 512:
             r = H / W
@@ -224,16 +216,7 @@ def get_Img(start_url, url,caffemodel):
         info['data'] = [featurebox]
         if not os.path.exists(infos['img_path']):
             cv2.imwrite(infos['img_path'], img)
-        # [bbox, extend] = FaceDetect(image2, 50, self.detectionModel)
-        # if len(self.bboxCam) == 0:
-        #    return None
-        # feature = feature_Extract(self.recognitionModel, bbox, extend, 128, 128)
-        # feature = numpy.divide(feature, numpy.sqrt(numpy.dot(feature, feature.T)))
-        # info['feature'] = feature
-        # print(info)
-        # infos.append(info)
-        yield info  # except for 姚铮 having no personal picture, choose the first picture in the other pages on which plural pictures are
-        # return info
+        yield info
 
 
 def spiderFull(caffemodel):
@@ -243,17 +226,14 @@ def spiderFull(caffemodel):
     :param img: input image of a specific person
     :return:(dict){'personal information':,'similar images':}
     '''
-    # codes here
     initial_url = 'http://www.ee.tsinghua.edu.cn'  # ee page
 
     queue = deque()
     visited = set()
     queue.append(initial_url)
-    # new_infos = infos
     while queue:
         url = queue.popleft()  # 队首元素出队
         visited |= {url}  # 标记为已访问
-        # print('have been ' + str(cnt) + ' pages    traversing <---  ' + url)
         try:
             urlop = urllib.request.urlopen(url, timeout=2)
             data = urlop.read().decode('utf-8')
@@ -267,12 +247,9 @@ def spiderFull(caffemodel):
                 x = initial_url + x
             if 'eeen' not in x and 'tsinghua' in x and x not in visited and x not in queue:  # block english vision of the ee page and non-tsinghua websites
                 queue.append(x)
-                # print('sum=' + str(len(queue) + len(visited)) + ', ' + str(len(queue)) + 'to go    add to queue --->  ' + x)
 
-        # new_info = get_Img(initial_url, url)
         for j in get_Img(initial_url, url,caffemodel):
             yield j
-            # yield new_info
 
 if __name__ == '__main__':
     caffe.set_mode_gpu()
@@ -284,10 +261,6 @@ if __name__ == '__main__':
     RecognitionPrototxt = rootFile + 'recognition.prototxt'
     RecognitionCaffeModel = rootFile + '_iter_70000.caffemodel'
     recognitionModel = caffe.Net(RecognitionPrototxt, RecognitionCaffeModel, caffe.TEST)
-    # caffemodel=[detectionModel,recognitionModel]
-    # tst = Spider(caffemodel)
     caffemodel = [detectionModel, recognitionModel]
     print('start:', time.time())
-    #for i in spiderFull(caffemodel):
-    #    print(i)
     print('finish:', time.time())

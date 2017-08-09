@@ -51,6 +51,10 @@ def get_info(url, info):
     name = str(name).replace('[', '')
     name = str(name).replace(']', '')
     name = str(name).replace('\'', '')
+    if '女' in name:
+        search = name.find('女')
+        name = name[:search]
+    name = str(name).replace('\"', '')
     #print(name)
     if len(name)>4:
         name0 = name.split()
@@ -170,7 +174,6 @@ def store_pic( info,img_url):
 
     info.update(img_path=pic_path)
 
-#def get_img(start_url, url, keywords, info, initial_info):
 def get_img(start_url, url, keywords, info,caffemodel):
     img_list = find_imglist(url)
     detectionModel = caffemodel[0]
@@ -181,7 +184,9 @@ def get_img(start_url, url, keywords, info,caffemodel):
 
         try:
             img = Image.open(io.BytesIO(urllib.request.urlopen(img_url, timeout=2).read()))
-            img = numpy.array(img)
+            rgb_im = img.convert('RGB')
+            # rgb_im.save('colors.jpg')
+            img = numpy.array(rgb_im)
             # Convert RGB to BGR
             img = img[:, :, ::-1].copy()
             W, H, D = img.shape
@@ -214,19 +219,12 @@ def get_img(start_url, url, keywords, info,caffemodel):
         except:
             continue
 
-        #compare the image with our feature
-
-        min_size = 50
-        feature = []
-        # dealing with score larger than a threshold
-
         info = get_info(url, info)                            #there is picture, thus get the infomations
-        #print(info)
 
         if keywords in info['name']:    #match
             # create new folder to save pictures
             info.update(img_url=img_url, url=url)  # adding url
-            store_pic(info, url)  # save the picture to local
+            store_pic(info, img_url)  # save the picture to local
             info['image'] = image2
             # info['feature'] = feature
             [bbox, extend] = FaceDetect_spider(image2, 50, detectionModel)

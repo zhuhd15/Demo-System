@@ -7,11 +7,15 @@ sys.path.append('/home/luka/PycharmProjects/Github/Demo-System')
 import spider,caffe
 import spider2,spider3
 import inSamePht
+import os
+from UIMain import dealWithImg
 
 global tmpTrans
 tmpTrans = 0.55
 global srchTrans
 srchTrans = 0.45
+global Combine
+Combine = 0.40
 
 global databaseRebuilding
 databaseRebuilding = 0
@@ -67,10 +71,13 @@ def fillInfo(informationDict):
     pass
 
 def featureDist(feature0 ,feature1):
-    dist = 0
-    for i in range(0,512):
-        dist += ((feature0[i] - feature1[i])** 2)
-    dist = dist ** 0.5
+    feature1 = numpy.array(feature1)
+    feature0 = numpy.array(feature0)
+    dist = numpy.sqrt(numpy.sum(numpy.square(feature0-feature1)))
+    #dist = 0
+    #for i in range(0,512):
+    #    dist += ((feature0[i] - feature1[i])** 2)
+    #dist = dist ** 0.5
     return dist
     pass
 
@@ -460,7 +467,6 @@ def databaseFind(feature):
             i['academic'] = tmpStr
         if 'feature' in i.keys():
             databaseRenew(i)
-
     conn.commit()
     return None
     #conn.commit()'''
@@ -479,8 +485,11 @@ def databaseRenew(informationDict):
         return databaseInsert(informationDict)
     tmpId = 0
     #tmpTrans = 0.55
-    global tmpTrans
-    tempTrans = tmpTrans
+    #this should be bew
+    #global tmpTrans
+    #tempTrans = tmpTrans
+    global Combine
+    tempTrans = Combine
     for i in commonList:
         cur.execute("select * from feature" + str(i))
         tmpFeature = []
@@ -686,9 +695,21 @@ def databaseAppend(tempList):
     idNo = []
     if tempList['valid']:
         for i in tempList['data']:
+            #######
+            ftTemp = databaseSearch(i['feature'])
+            if 'feature' in ftTemp:
+                if 'img_path' in ftTemp and ftTemp['img_path'] != '':
+                    if os.path.isfile(ftTemp['img_path']) and ftTemp['img_path']!=i['img_path'] and ftTemp['feature']!=i['feature']:
+                        dealWithImg(ftTemp)
+            if 'feature' in ftTemp:
+                if numpy.max(ftTemp['feature'])>0.0001 or numpy.min(ftTemp['feature'])<-0.001:
+                    i['feature'] = i['feature']*0.2+ftTemp['feature']*0.8
+                    i['feature'] = numpy.divide(i['feature'], numpy.sqrt(numpy.dot(i['feature'], i['feature'].T)))
             informationDict = dict()
             informationDict = fillInfo(informationDict)
             informationDict['feature'] = i['feature']
+            if 'name' in i.keys() and i['name'] is not '':
+                informationDict['name'] = i['name']
             if 'time' in i.keys():
                 informationDict['visit0'] = i['time']
             if 'tel' in i.keys():
@@ -1020,8 +1041,8 @@ def DatabaseBase():
     tablerows=cur.fetchall()
     conn.commit()
     if ('user',) not in tablerows:
-        tmpList = spider.Spider(caffemodel)
         databaseInit()
+        tmpList = spider.Spider(caffemodel)
         for i in tmpList:
             if ('academic' in i.keys()) and (type(i['academic']) is list):
                 tmpStr = ''
@@ -1031,61 +1052,71 @@ def DatabaseBase():
             if 'feature' in i.keys():
                 databaseRenew(i)
         conn.commit()
-        databaseRebuild()
-        for ispace in inSamePht.spiderFull(caffemodel):
-            databaseAppPhoto(ispace)
+        #for ispace in inSamePht.spiderFull(caffemodel):
+        #    databaseAppPhoto(ispace)
     conn.commit()
     #
+
+    #for ispace in inSamePht.spiderFull(caffemodel):
+    #    databaseAppPhoto(ispace)
     while True:
-        cnt = cur.execute("select * from user")
-        conn.commit()
-        #if cnt >= 50:
-        #    conn.commit()
-        #    databaseRebuild(cnt)
-        #    continue
-        #    pass
-        for i in range(0,cnt):
-            tmpInfo = cur.fetchone()
-            informationDict = databaseQueryFeature(tmpInfo[0])
-            flag = 0
-            numa = 0
-            if informationDict['name'] == '':
-                [numa,informationDict] = spider2.SpiderRenewer(informationDict, caffemodel)
-                flag = 1
-            else:
-                if informationDict['address'] == '':
-                    informationDict = spider2.SpiderRenewer1(informationDict, caffemodel)
-                    flag = 1
-                if informationDict['tel'] == '':
-                    informationDict = spider2.SpiderRenewer1(informationDict, caffemodel)
-                    flag = 1
-                if informationDict['fax'] == '':
-                    informationDict = spider2.SpiderRenewer1(informationDict, caffemodel)
-                    flag = 1
-                if informationDict['email'] == '':
-                    informationDict = spider2.SpiderRenewer1(informationDict, caffemodel)
-                    flag = 1
-                if informationDict['academic'] == '':
-                    informationDict = spider2.SpiderRenewer1(informationDict, caffemodel)
-                    flag = 1
-                if informationDict['url'] == '':
-                    informationDict = spider2.SpiderRenewer1(informationDict, caffemodel)
-                    flag = 1
-            if flag == 1:
-                if numa == 0:
-                    databaseRenew(informationDict)
-                else:
-                    for i in informationDict:
-                        if ('academic' in i.keys()) and (type(i['academic']) is list):
-                            tmpStr = ''
-                            for j in i['academic']:
-                                tmpStr += j + '$'
-                            i['academic'] = tmpStr
-                        if 'feature' in i.keys():
-                            databaseRenew(i)
-                conn.commit()
+        keyTime = int(time.strftime("%Y%m%d%H%M%S", time.localtime())) % 1000000
+        if keyTime < 10000 and keyTime>3000:
+            databaseRebuild()
+            cnt = cur.execute("select * from user")
             conn.commit()
-            flag = 0
+            #if cnt >= 50:
+            #    conn.commit()
+            #    databaseRebuild(cnt)
+            #    continue
+            #    pass
+
+            if cnt == 0 or cnt == 1:
+                time.sleep(2)
+            for i in range(0,cnt):
+                tmpInfo = cur.fetchone()
+                informationDict = databaseQueryFeature(tmpInfo[0])
+                flag = 0
+                numa = 0
+                if informationDict['name'] == '':
+                    [numa,informationDict] = spider2.SpiderRenewer(informationDict, caffemodel)
+                    flag = 1
+                else:
+                    '''if informationDict['address'] == '':
+                        informationDict = spider2.SpiderRenewer1(informationDict, caffemodel)
+                        flag = 1
+                    if informationDict['tel'] == '':
+                        informationDict = spider2.SpiderRenewer1(informationDict, caffemodel)
+                        flag = 1
+                    if informationDict['fax'] == '':
+                        informationDict = spider2.SpiderRenewer1(informationDict, caffemodel)
+                        flag = 1
+                    if informationDict['email'] == '':
+                        informationDict = spider2.SpiderRenewer1(informationDict, caffemodel)
+                        flag = 1
+                    if informationDict['academic'] == '':
+                        informationDict = spider2.SpiderRenewer1(informationDict, caffemodel)
+                        flag = 1
+                    if informationDict['url'] == '':
+                        informationDict = spider2.SpiderRenewer1(informationDict, caffemodel)
+                        flag = 1'''
+                    pass
+                if flag == 1:
+                    if numa == 0:
+                        databaseRenew(informationDict)
+                    else:
+                        for i in informationDict:
+                            if ('academic' in i.keys()) and (type(i['academic']) is list):
+                                tmpStr = ''
+                                for j in i['academic']:
+                                    tmpStr += j + '$'
+                                i['academic'] = tmpStr
+                            if 'feature' in i.keys():
+                                databaseRenew(i)
+                    conn.commit()
+                conn.commit()
+                flag = 0
+        time.sleep(1800)
         pass
     conn.commit()
     cur.close()

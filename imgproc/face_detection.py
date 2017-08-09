@@ -229,32 +229,34 @@ if __name__=='__main__':
     net = caffe.Net(deploy,caffe_model,caffe.TEST)
     min_size = 50
 
-    img1 = root + "img/tst.jpg"
+    img1 = root + "img/mhm.jpg"
     im1 = cv2.imread(img1, cv2.IMREAD_COLOR)
     [bbox1,Ip1]=FaceDetect(im1, min_size, net)
 
-    img2 = root + "img/left1.jpg"
-    im2 = cv2.imread(img2, cv2.IMREAD_COLOR)
-    [bbox2,Ip2]=FaceDetect(im2, min_size, net)
-    #a=int(bbox1[0])
-    #b=int(bbox1[1])
-    #c=int(bbox1[2]+bbox1[0])
-    #d=int(bbox1[3]+bbox1[1])
-    #Ip1 = numpy.array(Ip1, dtype=numpy.uint8)
-    #cv2.rectangle(Ip1,(a,b),(c,d),(0,255,0),5)
+    #img2 = root + "img/left1.jpg"
+    #im2 = cv2.imread(img2, cv2.IMREAD_COLOR)
+    #[bbox2,Ip2]=FaceDetect(im2, min_size, net)
+    a=int(bbox1[0])
+    b=int(bbox1[1])
+    c=int(bbox1[2]+bbox1[0])
+    d=int(bbox1[3]+bbox1[1])
+    Ip1 = numpy.array(Ip1, dtype=numpy.uint8)
+    cv2.rectangle(Ip1,(a,b),(c,d),(0,255,0),5)
+    cv2.imshow('tst',Ip1)
+    cv2.waitKey(0)
     #cv2.imwrite('messigray.png',Ip1)
 
 
-    deploy = root + "protobuf/deploy_p.prototxt"
-    caffe_model = root + "protobuf/pm_iter_78000.caffemodel"
-    net = caffe.Net(deploy,caffe_model,caffe.TEST)
-    similarity=face_Extract(net,bbox1,bbox2,Ip1,Ip2)
-    '''
-    deploy = root + "protobuf/train_test.prototxt"
-    caffe_model = root + "protobuf/_iter_70000.caffemodel"
-    #
-    net = caffe.Net(deploy, caffe_model, caffe.TEST)
-    similarity = face_Extract2(net, bbox1, bbox2, Ip1, Ip2)'''
-    print(time.clock()-start)
-    print(similarity)
+    #deploy = root + "protobuf/deploy_p.prototxt"
+    #caffe_model = root + "protobuf/pm_iter_78000.caffemodel"
+    #net = caffe.Net(deploy,caffe_model,caffe.TEST)
+    #similarity=face_Extract(net,bbox1,bbox2,Ip1,Ip2)
+    #'''
+    #deploy = root + "protobuf/train_test.prototxt"
+    #caffe_model = root + "protobuf/_iter_70000.caffemodel"
+    ##
+    #net = caffe.Net(deploy, caffe_model, caffe.TEST)
+    #similarity = face_Extract2(net, bbox1, bbox2, Ip1, Ip2)'''
+    #print(time.clock()-start)
+    #print(similarity)
 

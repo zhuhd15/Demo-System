@@ -19,7 +19,6 @@ import shutil
 import io
 
 def find_department(initial_url,major):
-    #queue = deque()
     urlop = urllib.request.urlopen(initial_url, timeout=2)
     data = urlop.read().decode('utf-8')
     linkre = re.compile('href="(.+?\.edu\.cn)')
@@ -40,7 +39,6 @@ def get_Html(url):
 
 def get_info(url, info):
     html = get_Html(url).decode('utf-8', 'ignore')
-    #print(html)
     html = html.replace('<p>&nbsp;</p>', '')
     html = html.replace('&nbsp;', ' ')
     html = html.replace('<p><br/></p>', '')
@@ -52,7 +50,6 @@ def get_info(url, info):
     html = html.replace('&bull;', ' ')
     html = html.replace('&quot;', ' ')
 
-    #print(html)
     if '姓' in html and '名' in html:
         form_name = re.compile('>姓\s*?名\s?(.+?)<')
     else:
@@ -65,7 +62,6 @@ def get_info(url, info):
     name = str(name).replace(']', '')
     name = str(name).replace('\'', '')
     info.update(name=name)
-    #print(name)
     if name == '':
         return info
     elif len(name)>4:
@@ -74,7 +70,6 @@ def get_info(url, info):
         title = ''
         for i in range(1,len(name0)):
             title = title + name0[i] + ' '
-            #print(title)
     else:
         form_title = re.compile('职称：?(.+?)\s?<')
         title = form_title.findall(html)
@@ -83,16 +78,6 @@ def get_info(url, info):
         title = str(title).replace('\'', '')
         title = str(title).replace(' ', '')
     info.update(name=name, title=title)
-    #print(title)
-    #form_addr = re.compile('\s?<.{1,3}>\s?([^<>;]+?清华.+?100084\)?)\s?<')
-    #addr = form_addr.findall(html)
-    #addr = str(addr).replace('[', '')
-    #addr = str(addr).replace(']', '')
-    #addr = str(addr).replace('\'', '')
-    #addr = str(addr).replace('</p><p>', ' ')
-    #info.update(address=addr)
-    #print(addr)
-    # form_tel = re.compile('[1084]?\s?</p>\s?<p>\s?(电话.+?)\s?<')
     form_tel = re.compile('(电话[^/<>。]+?[0-9].+?)\s?[<，]')
     tel = form_tel.findall(html)
     tel = str(tel).replace(' ', '')
@@ -134,8 +119,6 @@ def get_info(url, info):
         else:
             form_email3 = re.compile('([a-zA-Z0-9\-_*]+?@.+)\']')
             email3 = form_email3.findall(str(email))
-            #print(email)
-            #print(email3)
             email = email3
         email = str(email).replace('[', '')
         email = str(email).replace(']', '')
@@ -148,7 +131,6 @@ def get_info(url, info):
     page = str(page).replace(']', '')
     info.update(page=page)
     #print(page)
-    # form_academic1 = re.compile('学术成果.+?(\[1][^<>[]+)',re.DOTALL)
     form_academic1 = re.compile('学术成果.+?([\[\(（]?1[\.\]、\)）][^<>[]+)', re.DOTALL)
     academic1 = form_academic1.findall(html)
     # print(academic1)
@@ -180,22 +162,8 @@ def store_pic(img_url, info, url):
     path = 'd:\Demo-System\Spider'              #store in this folder
     if not os.path.isdir(path):
         os.makedirs(path)                       #create the folder if it doesn't exist
-    #title = time.strftime("%Y_%m_%d", time.localtime())
-    #new_path = os.path.join(path, info['name'])
-
-    #if info['name']!='':
-    #    name = info['name']
-    #else:
-    #    name = url.split('/')[-1]
     name = 'p' + img_url.split('/')[-1]
     pic_path = os.path.join(path, name)         #names include the type of pictures
-
-    #if 'png' in img_url or 'PNG' in img_url:
-    #    pic_path = os.path.join(path, name + '.png')
-    #elif 'jpg' in img_url or 'JPG' in img_url:
-    #    pic_path = os.path.join(path, name + '.jpg')
-    #elif 'bmp' in img_url or 'BMP' in img_url:
-    #    pic_path = os.path.join(path, name + '.bmp')  # dicide the name of the picture and the type
 
     if not os.path.exists(pic_path):                        #if the picture already exists, don't save again
         try:
@@ -223,34 +191,11 @@ def get_img_by_info(start_url, url, name, title):
             store_pic(img_url, info, url)  # save the picture to local
             try:
                 img = Image.open(io.BytesIO(urllib.request.urlopen(img_url, timeout=2).read()))
-                # print(img0)
-                # img0.show()
-                # show pictures of everyone
-                # image1 = img.resize((W, H))
-                # image1.show()
-                image2 = numpy.asarray(img)
             except:
                 print('ya')
                 continue
 
-            # compare the image with our feature
-            # [bbox, extend] = FaceDetect(image2, 50, self.detectionModel)
-            # if len(self.bboxCam) == 0:
-            #    return None
-            # feature = feature_Extract(self.recognitionModel, bbox, extend, 128, 128)
-            # feature = numpy.divide(feature, numpy.sqrt(numpy.dot(feature, feature.T)))
-            min_size = 50
-            feature = []
-            # dealing with score larger than a threshold
-
-            #info['image'] = image2
-            # info['feature'] = feature
-
-            #print(info)
             yield info
-            #return info
-    #yield info
-    #return info
 
 def SpiderRenewerByInfo(name, school, major, title):
     '''
