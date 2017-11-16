@@ -2,4 +2,3 @@
 
 #### To create a demo system for analysing datas based on face image processing 
 
-#####GUI include GUI interface 
