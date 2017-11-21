@@ -23,11 +23,15 @@ databaseRebuilding = 0
 #transLim = 0.4
 
 
-def RebaseStatus():
-    global databaseRebuilding
-    return databaseRebuilding
+#def RebaseStatus():
+#    global databaseRebuilding
+#    return databaseRebuilding
 
 def fillInfo(informationDict):
+	'''
+		Find those information sent into the database and fill it with missing part
+		in order to fit the items in the database
+	'''
     if (not 'leftson' in informationDict.keys()):
         informationDict['leftson'] = 0
     if (not 'rightson' in informationDict.keys()):
@@ -71,6 +75,9 @@ def fillInfo(informationDict):
     pass
 
 def featureDist(feature0 ,feature1):
+	'''
+		Calculate the distance between two features by cosine distance
+	'''
     feature1 = numpy.array(feature1)
     feature0 = numpy.array(feature0)
     dist = numpy.sqrt(numpy.sum(numpy.square(feature0-feature1)))
@@ -89,6 +96,10 @@ def featureTransvection(feature0 ,feature1):
     pass
 
 def timeDist(time1, time2):
+	'''
+		Calculate the time difference between two people occurs in front of the camera. If the time difference is less
+		than 10 second, we consider these two people know each other
+	'''
     if time1 > time2:
         return time1 - time2 - (((time1 // 100) - (time2 // 100))* 40)
     else:
@@ -96,6 +107,9 @@ def timeDist(time1, time2):
     pass
 
 def unionInfo(info1, info2):
+	'''
+		Merge two data in the database and find their similarity?(I guess?)
+	'''
     info = dict()
     info['img_path'] = info1['img_path']
     if info['img_path'] == '':
@@ -122,7 +136,7 @@ def unionInfo(info1, info2):
     if info['url'] == '':
         info['url'] = info2['url']
     info['firstVisit'] = info1['firstVisit']
-    if (info2['firstVisit'] != 0)and(info2['firstVisit']<info['firstVisit']):
+    if (info2['firstVisit'] != 0) and (info2['firstVisit']<info['firstVisit']):
         info['firstVisit'] = info2['firstVisit']
     visitList = []
     for i in range(0,3):
@@ -169,6 +183,9 @@ def unionInfo(info1, info2):
 
 
 def databaseInit():
+	'''
+		Init the whole database and create items in it.
+	'''
     conn = pymysql.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
     cur = conn.cursor()
     cur.execute("drop table if exists user;")
@@ -229,6 +246,9 @@ def databaseInit():
     pass
 
 def databaseInsert(informationDict):
+	'''
+		Insert new information into the database existed
+	'''
     informationDict = fillInfo(informationDict)
     conn = pymysql.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
     cur = conn.cursor()
@@ -373,6 +393,9 @@ def databaseInsert(informationDict):
     pass
 
 def databaseFind(feature):
+	'''
+		Find the most nearest feature in the database from the new feature captured by the camera or from website using cosine distance.
+	'''
     conn = pymysql.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
     cur = conn.cursor()
     infoCnt = cur.execute("select * from user")
@@ -472,6 +495,9 @@ def databaseFind(feature):
     #conn.commit()'''
 
 def databaseRenew(informationDict):
+	'''
+		Renew the items in the database
+	'''
     conn = pymysql.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
     cur = conn.cursor()
     informationDict = fillInfo(informationDict)
@@ -534,6 +560,9 @@ def databaseRenew(informationDict):
     pass
 
 def databaseUpdateFami(idNo):
+	'''
+		Update those familiar people in the database
+	'''
     conn = pymysql.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
     cur = conn.cursor()
     cur.execute("select * from user where idNo = {}".format(idNo))
@@ -544,7 +573,7 @@ def databaseUpdateFami(idNo):
     conn.close()
     for i in range(0,5):
         for j in range(0,10):
-            if (tmpInfo[36 + i] == tmpInfo[16 + j])and(tmpInfo[36 + i] != 0):
+            if (tmpInfo[36 + i] == tmpInfo[16 + j]) and (tmpInfo[36 + i] != 0):
                 conn = pymysql.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
                 cur = conn.cursor()
                 cur.execute("update user set famiPeopleCnt" + str(j) + " = {} where idNo = {}".format(tmpInfo[41 + i] + tmpInfo[26 + j], idNo))
@@ -606,6 +635,9 @@ def databaseUpdateFami(idNo):
     pass
 
 def databaseAppPhoto(tempList):
+	'''
+		append new photo into the database
+	'''
     conn = pymysql.connect(host='127.0.0.1', port=3306, user='root', passwd='666666', db='DemoSystemDatabase',
                            charset='utf8')
     cur = conn.cursor()
@@ -778,6 +810,9 @@ def databaseAppend(tempList):
     pass
 
 def databaseQuery(idNo):
+	'''
+		Query the information from the database
+	'''
     conn = pymysql.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
     cur = conn.cursor()
     informationDict = dict()
@@ -805,6 +840,9 @@ def databaseQuery(idNo):
     pass
 
 def databaseQueryFeature(idNo):
+	'''
+		Query feature from the database
+	'''
     conn = pymysql.connect(host = '127.0.0.1', port = 3306, user = 'root', passwd = '666666', db = 'DemoSystemDatabase', charset = 'utf8')
     cur = conn.cursor()
     informationDict = dict()
@@ -953,7 +991,7 @@ def databaseRebuild():
         global tmpTrans
         transLim = tmpTrans
         for j in range(0,i):
-            if (flagList[j] == 1)and(featureTransvection(infoDictList[i]['feature'],infoDictList[j]['feature']) > transLim):
+            if (flagList[j] == 1) and (featureTransvection(infoDictList[i]['feature'],infoDictList[j]['feature']) > transLim):
                 flagList[i] = 0
                 infoDictList[j] = unionInfo(infoDictList[i],infoDictList[j])
         cur.execute("drop table feature" + str(tmpInfo[0]))
