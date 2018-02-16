@@ -1,0 +1,4 @@
+numpy>=1.13.0
+pymysql>=0.7.0
+gtts>=1.1.0
+pygame>=1.9.2
