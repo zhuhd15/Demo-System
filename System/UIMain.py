@@ -11,6 +11,7 @@ from pygame import mixer
 
 from System.imgproc.LivenessFuncs.liveness_detection import *
 from .Database import *
+#from .query_vector import *
 from .GUI.uiMainwindow import Ui_MainWindow
 from .GUI.uiwindow2 import Ui_Dialog
 from .Spider.nameold import SpiderRenewerByName
@@ -704,10 +705,12 @@ class Screenshot(QWebView):
 
 def DBSerach(rec_pip,send_pip):
     infoDict = {}
+    # read_data() 
     while True:
         send_pip.send(infoDict)
         feature = rec_pip.recv()
         infoDict = databaseSearch(feature)
+        # infoDict = find_people(feature)
 
 
 ###############################################################################
