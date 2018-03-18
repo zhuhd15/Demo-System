@@ -301,11 +301,13 @@ def TEST_new_people(num):
     '''
     for i in range(0, num):
         new_people({'name': '%d'%i, 'vector': random_vector()})
+        if i % 100 == 0:
+            print(i)
 
 if __name__ == '__main__':
     init()
     delete_all()
-    TEST_new_people(10)
+    TEST_new_people(1000)
     '''
     for i in range(0, 15):
         try:

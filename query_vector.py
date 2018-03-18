@@ -1,4 +1,4 @@
-import pickle, time, random, sys, threading
+import pickle, time, random, sys, threading, queue
 from function_define import *
 from database_IO import *
 
@@ -28,8 +28,30 @@ def read_data():
         raise IOError
     vector_list_lock.release()
 
-MINSIM = 0.45
-def find_people(vec):
+MINSIM = 0
+find_people_queue = None
+class find_people_thread(threading.Thread):
+    def __init__(self, vec, begin, length):
+        threading.Thread.__init__(self)
+        self.vec, self.begin, self.length = vec, begin, length
+    def run(self):
+        global find_people_queue
+        vec, begin, length = self.vec, self.begin, self.length
+        maxsim = vector_cosine_dis(vec, vector_list[begin]['n']['vector'])
+        maxsim_id = begin
+        LEN = len(vec)
+        for i in range(begin + 1, min(begin + length, LEN)):
+            t = vector_cosine_dis(vec, vector_list[i]['n']['vector'])
+            if t > maxsim:
+                maxsim = t
+                maxsim_id = vector_list[i]['n']['id']
+        #print(maxsim_id)
+        if maxsim < MINSIM:
+            find_people_queue.put(None)
+        else:
+            find_people_queue.put(maxsim_id)
+
+def find_people(vec, THREAD_COUNT = 1):
     '''
         For a certain query of vector, find a people who has the nearest distance from the query.
         When called, you should put it in a new thread.
@@ -42,18 +64,29 @@ def find_people(vec):
         None:   If the nearest people is still too far from query(MINSIM)
         id:     If the nearest people is near enough.
     '''
-    maxsim = 0
-    maxsim_id = -1
-    for i in vector_list:
-        t = vector_cosine_dis(vec, i['n']['vector'])
-        print(t)
-        if t > maxsim:
-            maxsim = t
-            maxsim_id = i['n']['id']
-    if maxsim < MINSIM:
-        return None
-    return maxsim_id
+    global find_people_queue
+    find_people_queue = queue.Queue()
+    th = [None for i in range(THREAD_COUNT)]
+    ans = list()
+    length = len(vec) // THREAD_COUNT
+    cur = 0
+    for i in range(THREAD_COUNT):
+        th[i] = find_people_thread(vec, cur, length)
+        cur += length
+    ans_id = None
+    for i in range(THREAD_COUNT):
+        th[i].start()
+        th[i].join()
+    while not find_people_queue.empty():
+        ans.append(find_people_queue.get())
+    for i in range(THREAD_COUNT):
+        ans_id = ans[i] if ans_id == None or ans[i] != None and \
+            vector_cosine_dis(vec, vector_list[ans_id]['n']['vector']) <\
+            vector_cosine_dis(vec, vector_list[ans[i]]['n']['vector']) else ans_id
+    return ans_id
 
 if __name__ == '__main__':
     read_data()
-    print(find_people(random_vector()))
+    random.seed(1)
+    vec = random_vector()
+    print (find_people(vec))
